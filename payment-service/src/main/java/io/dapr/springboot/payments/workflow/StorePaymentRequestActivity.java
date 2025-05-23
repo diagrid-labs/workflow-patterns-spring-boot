@@ -28,8 +28,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Date;
-
 /*
  This activity shows how to interact with an external system that will store the Payment request,
  for example for auditing purposes.
@@ -58,12 +56,6 @@ public class StorePaymentRequestActivity implements WorkflowActivity {
     // Local registry of payment requests
     paymentRequestsStore.savePaymentRequest(paymentRequest);
 
-    // Adding delay to simulate a remote interaction
-    try {
-      Thread.sleep(5000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
 
     if(remoteServiceUrl != null && !remoteServiceUrl.isEmpty()) {
       // Define the shape of the request for the remote service

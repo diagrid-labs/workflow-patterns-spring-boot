@@ -20,7 +20,7 @@ public class PaymentRequest {
   private String id;
   private String customer;
   private Integer amount;
-  private String workflowId;
+  private Boolean processedByExternalAsyncSystem = false;
 
   public PaymentRequest() {
   }
@@ -55,12 +55,12 @@ public class PaymentRequest {
     this.amount = amount;
   }
 
-  public String getWorkflowId() {
-    return workflowId;
+  public Boolean getProcessedByExternalAsyncSystem() {
+    return processedByExternalAsyncSystem;
   }
 
-  public void setWorkflowId(String workflowId) {
-    this.workflowId = workflowId;
+  public void setProcessedByExternalAsyncSystem(Boolean processedByExternalAsyncSystem) {
+    this.processedByExternalAsyncSystem = processedByExternalAsyncSystem;
   }
 
   @Override
@@ -69,7 +69,7 @@ public class PaymentRequest {
             "id='" + id + '\'' +
             ", customer='" + customer + '\'' +
             ", amount=" + amount +
-            ", workflowId='" + workflowId + '\'' +
+            ", processedByExternalAsyncSystem=" + processedByExternalAsyncSystem +
             '}';
   }
 }

@@ -58,17 +58,15 @@ public class PaymentsServiceRestController {
    * @return confirmation that the workflow instance was created for a given customer
    */
   @PostMapping("/pay")
-  public PaymentRequest placeOrder(@RequestBody PaymentRequest paymentRequest) {
+  public PaymentRequest placePaymentRequest(@RequestBody PaymentRequest paymentRequest) {
     String instanceId = daprWorkflowClient.scheduleNewWorkflow(PaymentProcessingWorkflow.class, paymentRequest);
     logger.info("Workflow instance " + instanceId + " started");
-    paymentRequest.setWorkflowId(instanceId);
     paymentsWorkflows.put(paymentRequest.getId(), instanceId);
     return paymentRequest;
   }
 
 
-
-  @GetMapping("/orders")
+  @GetMapping("/requests")
   public Collection<PaymentRequest> getPaymentRequests() {
     return paymentRequestsStore.getPaymentRequests();
   }

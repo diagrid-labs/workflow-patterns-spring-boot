@@ -14,38 +14,40 @@ limitations under the License.
 package io.dapr.springboot.payments.workflow;
 
 
+import io.dapr.springboot.payments.model.AuditPaymentPayload;
 import io.dapr.springboot.payments.model.PaymentRequest;
+import io.dapr.springboot.payments.service.PaymentRequestsStore;
 import io.dapr.workflows.WorkflowActivity;
 import io.dapr.workflows.WorkflowActivityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 /*
- This activity shows how to place a Kafka Message to a Broker
+ This activity shows how to update the payment status so we can validate in the test
  */
 @Component
-public class SendPaymentAsyncSystemActivity implements WorkflowActivity {
+public class UpdatePaymentRequestActivity implements WorkflowActivity {
 
-  private final Logger logger = LoggerFactory.getLogger(SendPaymentAsyncSystemActivity.class);
+  private final Logger logger = LoggerFactory.getLogger(UpdatePaymentRequestActivity.class);
+  private final PaymentRequestsStore paymentRequestsStore;
 
-  private final KafkaTemplate<String, Object> kafkaTemplate;
-
-
-  public SendPaymentAsyncSystemActivity(KafkaTemplate<String, Object> kafkaTemplate ) {
-    this.kafkaTemplate = kafkaTemplate;
+  public UpdatePaymentRequestActivity(PaymentRequestsStore ordersStore) {
+    this.paymentRequestsStore = ordersStore;
   }
 
-  @Value("${REMOTE_KAFKA_TOPIC:}")
-  private String kafkaTopic;
 
   @Override
   public Object run(WorkflowActivityContext ctx) {
     PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
 
-    kafkaTemplate.send(kafkaTopic, paymentRequest);
+    paymentRequest.setProcessedByExternalAsyncSystem(true);
+
+    paymentRequestsStore.savePaymentRequest(paymentRequest);
 
     return paymentRequest;
   }

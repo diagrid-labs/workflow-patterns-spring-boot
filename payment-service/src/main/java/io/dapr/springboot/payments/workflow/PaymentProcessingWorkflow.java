@@ -28,7 +28,6 @@ public class PaymentProcessingWorkflow implements Workflow {
     return ctx -> {
       String instanceId = ctx.getInstanceId();
       PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
-      paymentRequest.setWorkflowId(instanceId);
       // Audit incoming Payment Request
       ctx.getLogger().info("Let's store the payment request: " + paymentRequest.getId()
               + " for customer: " + paymentRequest.getCustomer());
@@ -45,6 +44,10 @@ public class PaymentProcessingWorkflow implements Workflow {
       paymentRequest = ctx.waitForExternalEvent("ExternalProcessingDone", Duration.ofMinutes(5), PaymentRequest.class).await();
 
       ctx.getLogger().info("Payment was approved and event arrived: " + paymentRequest.getId());
+
+      ctx.getLogger().info("Let's update the payment state: " + paymentRequest.getId());
+      paymentRequest = ctx.callActivity(UpdatePaymentRequestActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
+      ctx.getLogger().info("Payment state updated: " + paymentRequest);
 
       ctx.complete(paymentRequest);
     };

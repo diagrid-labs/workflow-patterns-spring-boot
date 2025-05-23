@@ -13,7 +13,6 @@ limitations under the License.
 
 package io.dapr.springboot.payments;
 
-import io.dapr.client.DaprClient;
 import io.dapr.springboot.DaprAutoConfiguration;
 import io.dapr.springboot.payments.model.PaymentRequest;
 import io.dapr.springboot.payments.service.PaymentRequestsStore;
@@ -28,10 +27,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.awaitility.Awaitility.await;
@@ -46,7 +45,7 @@ class PaymentServiceAppTests {
 
 
   @Autowired
-  private PaymentRequestsStore ordersStore;
+  private PaymentRequestsStore paymentRequestsStore;
 
 
   @Autowired
@@ -63,37 +62,28 @@ class PaymentServiceAppTests {
 
 
   @Test
-  void testCustomersWorkflows() throws InterruptedException, IOException {
+  void testPaymentProcessingWorkflows() throws InterruptedException, IOException {
 
-    given().contentType(ContentType.JSON)
+    PaymentRequest paymentRequest = given().contentType(ContentType.JSON)
             .body(new PaymentRequest("salaboy", 10 ))
             .when()
             .post("/pay")
             .then()
-            .statusCode(200);
+            .statusCode(200).extract().as(PaymentRequest.class);
 
 
     await().atMost(Duration.ofSeconds(5))
-            .until(ordersStore.getPaymentRequests()::size, equalTo(1));
+            .until(paymentRequestsStore.getPaymentRequests()::size, equalTo(1));
 
 
-    Thread.sleep(100000);
+    await().atMost(Duration.ofSeconds(20))
+            .pollDelay(500, TimeUnit.MILLISECONDS)
+            .pollInterval(500, TimeUnit.MILLISECONDS)
+            .until(() -> {
+              System.out.println(paymentRequestsStore.getPaymentRequest(paymentRequest.getId()));
+              return paymentRequestsStore.getPaymentRequest(paymentRequest.getId()).getProcessedByExternalAsyncSystem();
+            });
 
-    //ordersStore.getOrder()
-//    Order customer = ordersStore.getCustomer("salaboy");
-//    assertEquals(true, customer.isInCustomerDB());
-//    String workflowId = customer.getWorkflowId();
-//    given().contentType(ContentType.JSON)
-//            .body("{ \"workflowId\": \"" + workflowId + "\",\"customerName\": \"salaboy\" }")
-//            .when()
-//            .post("/customers/followup")
-//            .then()
-//            .statusCode(200);
-//
-//    assertEquals(1, customerStore.getCustomers().size());
-//
-//    await().atMost(Duration.ofSeconds(10))
-//            .until(customerStore.getCustomer("salaboy")::isFollowUp, equalTo(true));*/
 
   }
 
