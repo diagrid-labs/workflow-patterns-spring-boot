@@ -18,6 +18,8 @@ import io.dapr.workflows.Workflow;
 import io.dapr.workflows.WorkflowStub;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 @Component
 public class PaymentProcessingWorkflow implements Workflow {
 
@@ -34,6 +36,15 @@ public class PaymentProcessingWorkflow implements Workflow {
 
       ctx.getLogger().info("Payment request: " + paymentRequest.getId()
               + " sent to audit service.");
+
+      ctx.getLogger().info("Let's send the payment request to an async external system: " + paymentRequest.getId());
+      ctx.callActivity(SendPaymentAsyncSystemActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
+
+      // Wait for the external system to get back to us
+      ctx.getLogger().info("Let's wait for external system to get back to us: " + paymentRequest.getId());
+      paymentRequest = ctx.waitForExternalEvent("ExternalProcessingDone", Duration.ofMinutes(5), PaymentRequest.class).await();
+
+      ctx.getLogger().info("Payment was approved and event arrived: " + paymentRequest.getId());
 
       ctx.complete(paymentRequest);
     };

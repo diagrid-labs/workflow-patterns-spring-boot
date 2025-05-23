@@ -17,6 +17,9 @@ import io.dapr.client.DaprClient;
 import io.dapr.springboot.DaprAutoConfiguration;
 import io.dapr.springboot.payments.model.PaymentRequest;
 import io.dapr.springboot.payments.service.PaymentRequestsStore;
+import io.dapr.springboot.payments.workflow.PaymentProcessingWorkflow;
+import io.dapr.springboot.payments.workflow.SendPaymentAsyncSystemActivity;
+import io.dapr.springboot.payments.workflow.StorePaymentRequestActivity;
 import io.dapr.testcontainers.DaprContainer;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -24,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.IOException;
@@ -34,20 +38,15 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 @SpringBootTest(classes = {TestPaymentsServiceApplication.class, DaprTestContainersConfig.class,
-        DaprAutoConfiguration.class},
+        DaprAutoConfiguration.class, PaymentsServiceRestController.class, PaymentProcessingWorkflow.class,
+        SendPaymentAsyncSystemActivity.class, StorePaymentRequestActivity.class, ExternalKafkaMessageListener.class},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@TestPropertySource(properties = {"REMOTE_KAFKA_TOPIC = topic"})
 class PaymentServiceAppTests {
 
-  private static final String SUBSCRIPTION_MESSAGE_PATTERN = ".*app is subscribed to the following topics.*";
-
-  @Autowired
-  private TestSubscriberRestController controller;
 
   @Autowired
   private PaymentRequestsStore ordersStore;
-
-  @Autowired
-  private DaprClient daprClient;
 
 
   @Autowired
@@ -58,8 +57,7 @@ class PaymentServiceAppTests {
   void setUp() {
     RestAssured.baseURI = "http://localhost:" + 8080;
     org.testcontainers.Testcontainers.exposeHostPorts(8080);
-    // Ensure the subscriptions are registered
-    Wait.forLogMessage(SUBSCRIPTION_MESSAGE_PATTERN, 1).waitUntilReady(daprContainer);
+
 
   }
 
@@ -77,6 +75,9 @@ class PaymentServiceAppTests {
 
     await().atMost(Duration.ofSeconds(5))
             .until(ordersStore.getPaymentRequests()::size, equalTo(1));
+
+
+    Thread.sleep(100000);
 
     //ordersStore.getOrder()
 //    Order customer = ordersStore.getCustomer("salaboy");

@@ -84,19 +84,19 @@ public class DaprTestContainersConfig {
   @ServiceConnection
   public DaprContainer daprContainer(Network daprNetwork, KafkaContainer kafkaContainer) {
 
-    Map<String, String> kafkaProperties = new HashMap<>();
-    kafkaProperties.put("brokers", "kafka:19092");
-    kafkaProperties.put("authType", "none");
+//    Map<String, String> kafkaProperties = new HashMap<>();
+//    kafkaProperties.put("brokers", "kafka:19092");
+//    kafkaProperties.put("authType", "none");
 
     return new DaprContainer("daprio/daprd:1.15.4")
             .withAppName("payment-service")
             .withNetwork(daprNetwork)
             .withComponent(new Component("kvstore", "state.in-memory", "v1",
                     Collections.singletonMap("actorStateStore", "true")))
-            .withComponent(new Component("pubsub", "pubsub.kafka", "v1", kafkaProperties))
-            .withSubscription(new Subscription("app", "pubsub", "topic", "/subscribe"))
-            .withDaprLogLevel(DaprLogLevel.DEBUG)
-            .withLogConsumer(outputFrame -> System.out.println(outputFrame.getUtf8String()))
+            //.withComponent(new Component("pubsub", "pubsub.kafka", "v1", kafkaProperties))
+            //.withSubscription(new Subscription("app", "pubsub", "topic", "/subscribe"))
+//            .withDaprLogLevel(DaprLogLevel.DEBUG)
+//            .withLogConsumer(outputFrame -> System.out.println(outputFrame.getUtf8String()))
             .withAppPort(8080)
             .withAppHealthCheckPath("/actuator/health")
             .withAppChannelAddress("host.testcontainers.internal")

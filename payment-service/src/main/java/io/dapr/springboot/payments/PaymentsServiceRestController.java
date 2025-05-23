@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -65,22 +66,7 @@ public class PaymentsServiceRestController {
     return paymentRequest;
   }
 
-  /**
-   *  Request customer follow-up.
-   *  @param paymentRequest associated with a workflow instance
-   *  @return confirmation that the follow-up was requested
-   */
-  @PostMapping("/pay/approve")
-  public String orderApproval(@RequestBody PaymentRequest paymentRequest) {
-    logger.info("Order approval requested: " + paymentRequest.getId());
-    String workflowIdForCustomer = paymentsWorkflows.get(paymentRequest.getId());
-    if (workflowIdForCustomer == null || workflowIdForCustomer.isEmpty()) {
-      return "There is no workflow associated with customer: " + paymentRequest.getId();
-    } else {
-      daprWorkflowClient.raiseEvent(workflowIdForCustomer, "OrderApprovalRequest", paymentRequest);
-      return "Payment Approval requested";
-    }
-  }
+
 
   @GetMapping("/orders")
   public Collection<PaymentRequest> getPaymentRequests() {
@@ -96,5 +82,9 @@ public class PaymentsServiceRestController {
   }
 
   public record Info(String publicIp){}
+
+  public Map<String, String> getPaymentsWorkflows() {
+    return paymentsWorkflows;
+  }
 }
 
