@@ -15,23 +15,23 @@ package io.dapr.springboot.payments;
 
 import io.dapr.testcontainers.Component;
 import io.dapr.testcontainers.DaprContainer;
-import io.dapr.testcontainers.DaprLogLevel;
-import io.dapr.testcontainers.Subscription;
+import io.github.microcks.testcontainers.MicrocksContainersEnsemble;
+import io.github.microcks.testcontainers.connection.KafkaConnection;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @TestConfiguration(proxyBeanMethods = false)
 public class DaprTestContainersConfig {
@@ -80,8 +80,30 @@ public class DaprTestContainersConfig {
     return kafkaContainer;
   }
 
+
+  @Bean
+  MicrocksContainersEnsemble microcksEnsemble(KafkaContainer kafkaContainer, Network network) {
+      DockerImageName nativeImage = DockerImageName.parse("quay.io/microcks/microcks-uber:1.11.2-native")
+            .asCompatibleSubstituteFor("quay.io/microcks/microcks-uber:1.9.0");
+      MicrocksContainersEnsemble ensemble = new MicrocksContainersEnsemble(network, nativeImage)
+            .withAccessToHost(true)   // We need this to access our webapp while it runs
+            .withMainArtifacts("third-parties/remote-http-service.yaml");
+    return ensemble;
+  }
+
+  @Bean
+  public DynamicPropertyRegistrar endpointsProperties(MicrocksContainersEnsemble ensemble) {
+    // We need to replace the default endpoints with those provided by Microcks.
+    return (properties) -> {
+      properties.add("application.validation-base-url", () -> ensemble.getMicrocksContainer()
+              .getRestMockEndpoint("API Payment Validator", "1.0.0"));
+    };
+  }
+
+
   @Bean
   @ServiceConnection
+  @ConditionalOnProperty(prefix = "tests", name = "dapr.local", havingValue = "true")
   public DaprContainer daprContainer(Network daprNetwork, KafkaContainer kafkaContainer) {
 
 //    Map<String, String> kafkaProperties = new HashMap<>();

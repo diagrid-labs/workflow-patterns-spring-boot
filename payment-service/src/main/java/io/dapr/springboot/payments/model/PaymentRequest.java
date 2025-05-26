@@ -23,6 +23,7 @@ public class PaymentRequest {
   private Boolean processedByExternalAsyncSystem = false;
 
   public PaymentRequest() {
+    this.id = UUID.randomUUID().toString();
   }
 
   public PaymentRequest(String customer, Integer amount) {

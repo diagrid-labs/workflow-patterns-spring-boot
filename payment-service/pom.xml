@@ -37,11 +37,6 @@
       <artifactId>spring-boot-starter-test</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-configuration-processor</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>io.dapr.spring</groupId>
       <artifactId>dapr-spring-boot-starter</artifactId>
       <version>${dapr.version}</version>
@@ -54,6 +49,12 @@
       <groupId>io.dapr.spring</groupId>
       <artifactId>dapr-spring-boot-starter-test</artifactId>
       <version>${dapr.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.microcks</groupId>
+      <artifactId>microcks-testcontainers</artifactId>
+      <version>0.3.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -79,6 +80,35 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
+      <plugin>
+        <groupId>org.graalvm.buildtools</groupId>
+        <artifactId>native-maven-plugin</artifactId>
+        <configuration>
+          <skipNativeTests>true</skipNativeTests>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>native</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>build-native</id>
+                <goals>
+                  <goal>compile-no-fork</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

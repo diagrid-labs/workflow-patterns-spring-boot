@@ -40,7 +40,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
         DaprAutoConfiguration.class, PaymentsServiceRestController.class, PaymentProcessingWorkflow.class,
         SendPaymentAsyncSystemActivity.class, StorePaymentRequestActivity.class, ExternalKafkaMessageListener.class},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@TestPropertySource(properties = {"REMOTE_KAFKA_TOPIC = topic"})
+@TestPropertySource(properties = {"REMOTE_KAFKA_TOPIC = topic", "tests.dapr.local=true"})
 class PaymentServiceAppTests {
 
 

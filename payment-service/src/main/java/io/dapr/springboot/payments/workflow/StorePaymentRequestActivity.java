@@ -46,8 +46,8 @@ public class StorePaymentRequestActivity implements WorkflowActivity {
   @Autowired
   private RestTemplate restTemplate;
 
-  @Value("${REMOTE_SERVICE_URL:}")
-  private String remoteServiceUrl;
+  @Value("${application.validation-base-url:}")
+  private String validationBaseURL;
 
   @Override
   public Object run(WorkflowActivityContext ctx) {
@@ -57,13 +57,13 @@ public class StorePaymentRequestActivity implements WorkflowActivity {
     paymentRequestsStore.savePaymentRequest(paymentRequest);
 
 
-    if(remoteServiceUrl != null && !remoteServiceUrl.isEmpty()) {
+    if(validationBaseURL != null && !validationBaseURL.isEmpty()) {
       // Define the shape of the request for the remote service
       HttpEntity<AuditPaymentPayload> request =
               new HttpEntity<>(new AuditPaymentPayload(paymentRequest.getId(),
                       paymentRequest.getCustomer(), paymentRequest.getAmount(), "Payment accepted for processing"));
-      String orderUpdateString =
-              restTemplate.postForObject(remoteServiceUrl + "/audit-payment-request", request, String.class);
+      AuditPaymentPayload orderUpdateString =
+              restTemplate.postForObject(validationBaseURL + "/validate", request, AuditPaymentPayload.class);
       logger.info("Update Order result: " + orderUpdateString);
     }
     logger.info("PaymentRequest: " + paymentRequest.getId() + " stored for auditing.");
