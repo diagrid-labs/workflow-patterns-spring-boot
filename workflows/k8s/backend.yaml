@@ -1,35 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: warehouse-deployment
+  name: workflows-deployment
 spec:
   selector:
     matchLabels:
-      app: warehouse-service
+      app: workflows-service
   template:
     metadata:
       annotations:  
-        dapr.io/app-id: warehouse
+        dapr.io/app-id: workflows
         dapr.io/app-port: "8080"
         dapr.io/enabled: "true"
         dapr.io/log-level: "debug"
       labels:
-        app: warehouse-service
-        app.kubernetes.io/name: warehouse-service
-        app.kubernetes.io/part-of: warehouse-service
+        app: workflows
+        app.kubernetes.io/name: workflows-service
+        app.kubernetes.io/part-of: workflows-service
         app.kubernetes.io/version: 1.0.0
     spec:
       containers:
-      - name: warehouse-service
-        image: salaboy/warehouse-service:1.0.5-amd64
+      - name: workflows
+        image: salaboy/dapr-workflows:1.0.5-amd64
         imagePullPolicy: Always
         env:
         - name: JAVA_OPTS
           value: "-XX:+UseParallelGC -XX:ActiveProcessorCount=1 -XX:MaxRAMPercentage=75 -XX:TieredStopAtLevel=1"
-        - name: PUBLIC_IP
-          value: 34.171.35.244
-        - name: WORKER_URL
-          value: https://cloudflare-worker.nlea.workers.dev/
         livenessProbe:
           httpGet:
             path: /actuator/health
@@ -51,10 +47,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: warehouse
+  name: workflows
 spec:
   selector:
-    app: warehouse-service
+    app: workflows-service
   type: LoadBalancer
   ports:
   - port: 80
