@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments.config;
+package io.dapr.springboot.workflows.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

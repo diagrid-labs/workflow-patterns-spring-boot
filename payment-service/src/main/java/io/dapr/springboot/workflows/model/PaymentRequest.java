@@ -11,23 +11,23 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments.model;
-
-import java.util.UUID;
+package io.dapr.springboot.workflows.model;
 
 public class PaymentRequest {
 
   private String id;
   private String customer;
   private Integer amount;
+  private Boolean processedByRemoteHttpService = false;
   private Boolean processedByExternalAsyncSystem = false;
+  private String workflowInstanceId;
 
   public PaymentRequest() {
-    this.id = UUID.randomUUID().toString();
+
   }
 
-  public PaymentRequest(String customer, Integer amount) {
-    this.id = UUID.randomUUID().toString();
+  public PaymentRequest(String id, String customer, Integer amount) {
+    this.id = id;
     this.customer = customer;
     this.amount = amount;
   }
@@ -64,13 +64,31 @@ public class PaymentRequest {
     this.processedByExternalAsyncSystem = processedByExternalAsyncSystem;
   }
 
+  public String getWorkflowInstanceId() {
+    return workflowInstanceId;
+  }
+
+  public void setWorkflowInstanceId(String workflowInstanceId) {
+    this.workflowInstanceId = workflowInstanceId;
+  }
+
+  public Boolean getProcessedByRemoteHttpService() {
+    return processedByRemoteHttpService;
+  }
+
+  public void setProcessedByRemoteHttpService(Boolean processedByRemoteHttpService) {
+    this.processedByRemoteHttpService = processedByRemoteHttpService;
+  }
+
   @Override
   public String toString() {
     return "PaymentRequest{" +
             "id='" + id + '\'' +
             ", customer='" + customer + '\'' +
             ", amount=" + amount +
+            ", processedByRemoteHttpService=" + processedByRemoteHttpService +
             ", processedByExternalAsyncSystem=" + processedByExternalAsyncSystem +
+            ", workflowInstanceId='" + workflowInstanceId + '\'' +
             '}';
   }
 }

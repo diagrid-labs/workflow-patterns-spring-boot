@@ -1,19 +1,22 @@
-package io.dapr.springboot.payments.model;
+package io.dapr.springboot.workflows.model;
 
-public class AuditPaymentPayload {
+/*
+ * PaymentPayload represent the data structure expected from an external system
+ */
+public class PaymentPayload {
   private String paymentRequestId;
   private String customer;
   private Integer amount;
   private String message;
 
-  public AuditPaymentPayload(String paymentRequestId, String customer, Integer amount, String message) {
+  public PaymentPayload(String paymentRequestId, String customer, Integer amount, String message) {
     this.paymentRequestId = paymentRequestId;
     this.customer = customer;
     this.amount = amount;
     this.message = message;
   }
 
-  public AuditPaymentPayload() {
+  public PaymentPayload() {
   }
 
   public String getPaymentRequestId() {

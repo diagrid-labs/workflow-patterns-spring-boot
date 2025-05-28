@@ -11,14 +11,15 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments;
+package io.dapr.springboot.workflows;
 
 import io.dapr.springboot.DaprAutoConfiguration;
-import io.dapr.springboot.payments.model.PaymentRequest;
-import io.dapr.springboot.payments.service.PaymentRequestsStore;
-import io.dapr.springboot.payments.workflow.PaymentProcessingWorkflow;
-import io.dapr.springboot.payments.workflow.SendPaymentAsyncSystemActivity;
-import io.dapr.springboot.payments.workflow.StorePaymentRequestActivity;
+import io.dapr.springboot.workflows.asynckafka.ExternalKafkaMessageListener;
+import io.dapr.springboot.workflows.model.PaymentRequest;
+import io.dapr.springboot.workflows.service.PaymentRequestsStore;
+import io.dapr.springboot.workflows.workflow.PaymentProcessingWorkflow;
+import io.dapr.springboot.workflows.asynckafka.SendPaymentAsyncSystemActivity;
+import io.dapr.springboot.workflows.workflow.StorePaymentRequestActivity;
 import io.dapr.testcontainers.DaprContainer;
 import io.github.microcks.testcontainers.MicrocksContainersEnsemble;
 import io.restassured.RestAssured;
@@ -69,7 +70,7 @@ class PaymentServiceAppTests {
   void testPaymentProcessingWorkflows() throws InterruptedException, IOException {
 
     PaymentRequest paymentRequest = given().contentType(ContentType.JSON)
-            .body(new PaymentRequest("salaboy", 10 ))
+            .body(new PaymentRequest("123", "salaboy", 10 ))
             .when()
             .post("/pay")
             .then()

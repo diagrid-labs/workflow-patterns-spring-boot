@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments;
+package io.dapr.springboot.workflows;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

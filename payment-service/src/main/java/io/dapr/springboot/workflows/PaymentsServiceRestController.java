@@ -11,18 +11,16 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments;
+package io.dapr.springboot.workflows;
 
 import io.dapr.spring.workflows.config.EnableDaprWorkflows;
-import io.dapr.springboot.payments.model.PaymentRequest;
-import io.dapr.springboot.payments.service.PaymentRequestsStore;
-import io.dapr.springboot.payments.workflow.PaymentProcessingWorkflow;
+import io.dapr.springboot.workflows.model.PaymentRequest;
+import io.dapr.springboot.workflows.service.PaymentRequestsStore;
+import io.dapr.springboot.workflows.workflow.PaymentProcessingWorkflow;
 import io.dapr.workflows.client.DaprWorkflowClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,9 +35,6 @@ import java.util.Map;
 public class PaymentsServiceRestController {
 
   private final Logger logger = LoggerFactory.getLogger(PaymentsServiceRestController.class);
-
-  @Value("${PUBLIC_IP:localhost:8080}")
-  private String publicIp;
 
   @Autowired
   private DaprWorkflowClient daprWorkflowClient;
@@ -74,12 +69,6 @@ public class PaymentsServiceRestController {
   public record PaymentEvent(PaymentRequest order) {
   }
 
-  @GetMapping("/server-info")
-  public Info getInfo(){
-    return new Info(publicIp);
-  }
-
-  public record Info(String publicIp){}
 
   public Map<String, String> getPaymentsWorkflows() {
     return paymentsWorkflows;

@@ -11,21 +11,16 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments.workflow;
+package io.dapr.springboot.workflows.workflow;
 
 
-import io.dapr.springboot.payments.model.AuditPaymentPayload;
-import io.dapr.springboot.payments.model.PaymentRequest;
-import io.dapr.springboot.payments.service.PaymentRequestsStore;
+import io.dapr.springboot.workflows.model.PaymentRequest;
+import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.workflows.WorkflowActivity;
 import io.dapr.workflows.WorkflowActivityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 /*
  This activity shows how to update the payment status so we can validate in the test

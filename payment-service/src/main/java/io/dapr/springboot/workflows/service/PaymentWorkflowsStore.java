@@ -11,9 +11,9 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments.service;
+package io.dapr.springboot.workflows.service;
 
-import io.dapr.springboot.payments.model.PaymentRequest;
+import io.dapr.springboot.workflows.model.PaymentRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -22,19 +22,20 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class PaymentRequestsStore {
-  private final Map<String, PaymentRequest> paymentRequests = new ConcurrentHashMap<>();
+public class PaymentWorkflowsStore {
 
-  public void savePaymentRequest(PaymentRequest paymentRequest) {
-    paymentRequests.put(paymentRequest.getId(), paymentRequest);
+  private final Map<String, String> paymentsWorkflows = new HashMap<>();
+
+  public void savePaymentWorkflow(PaymentRequest paymentRequest, String instanceId) {
+    paymentsWorkflows.put(paymentRequest.getId(), instanceId);
   }
 
-  public PaymentRequest getPaymentRequest(String requestId) {
-    return paymentRequests.get(requestId);
+  public String getPaymentWorkflowInstanceId(String paymentRequestId) {
+    return paymentsWorkflows.get(paymentRequestId);
   }
 
-  public Collection<PaymentRequest> getPaymentRequests() {
-    return paymentRequests.values();
+  public Map<String, String> getPaymentWorkflows() {
+    return paymentsWorkflows;
   }
 
 }

@@ -11,14 +11,16 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments.workflow;
+package io.dapr.springboot.workflows.asynckafka;
 
 
-import io.dapr.springboot.payments.model.PaymentRequest;
+import io.dapr.springboot.workflows.model.PaymentRequest;
+import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.workflows.WorkflowActivity;
 import io.dapr.workflows.WorkflowActivityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -33,18 +35,22 @@ public class SendPaymentAsyncSystemActivity implements WorkflowActivity {
 
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
+  @Autowired
+  private PaymentRequestsStore paymentRequestsStore;
 
   public SendPaymentAsyncSystemActivity(KafkaTemplate<String, Object> kafkaTemplate ) {
     this.kafkaTemplate = kafkaTemplate;
   }
 
-  @Value("${REMOTE_KAFKA_TOPIC:}")
+  @Value("${REMOTE_KAFKA_TOPIC:topic}")
   private String kafkaTopic;
 
   @Override
   public Object run(WorkflowActivityContext ctx) {
     PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
 
+    paymentRequestsStore.savePaymentRequest(paymentRequest);
+    logger.info("Placing a kafka message from Activity: " + ctx.getName());
     kafkaTemplate.send(kafkaTopic, paymentRequest);
 
     return paymentRequest;

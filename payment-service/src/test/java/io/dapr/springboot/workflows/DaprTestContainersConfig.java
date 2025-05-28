@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments;
+package io.dapr.springboot.workflows;
 
 import io.dapr.testcontainers.Component;
 import io.dapr.testcontainers.DaprContainer;

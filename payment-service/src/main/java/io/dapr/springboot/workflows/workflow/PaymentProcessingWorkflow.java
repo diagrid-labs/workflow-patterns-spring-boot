@@ -11,9 +11,10 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.payments.workflow;
+package io.dapr.springboot.workflows.workflow;
 
-import io.dapr.springboot.payments.model.PaymentRequest;
+import io.dapr.springboot.workflows.asynckafka.SendPaymentAsyncSystemActivity;
+import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.workflows.Workflow;
 import io.dapr.workflows.WorkflowStub;
 import io.dapr.workflows.WorkflowTaskOptions;

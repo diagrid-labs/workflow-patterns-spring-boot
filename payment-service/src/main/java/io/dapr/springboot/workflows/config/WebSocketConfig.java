@@ -1,4 +1,4 @@
-package io.dapr.springboot.payments.config;
+package io.dapr.springboot.workflows.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
