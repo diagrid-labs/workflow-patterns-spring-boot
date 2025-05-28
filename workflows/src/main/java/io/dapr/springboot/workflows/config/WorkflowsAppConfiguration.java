@@ -22,7 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @EnableConfigurationProperties()
-public class PaymentServiceAppConfiguration {
+public class WorkflowsAppConfiguration {
   @Bean
   public ObjectMapper mapper() {
     return new ObjectMapper();
