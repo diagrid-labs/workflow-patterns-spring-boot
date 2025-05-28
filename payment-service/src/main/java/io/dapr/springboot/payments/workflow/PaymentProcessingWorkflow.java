@@ -16,6 +16,8 @@ package io.dapr.springboot.payments.workflow;
 import io.dapr.springboot.payments.model.PaymentRequest;
 import io.dapr.workflows.Workflow;
 import io.dapr.workflows.WorkflowStub;
+import io.dapr.workflows.WorkflowTaskOptions;
+import io.dapr.workflows.WorkflowTaskRetryPolicy;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -31,7 +33,9 @@ public class PaymentProcessingWorkflow implements Workflow {
       // Audit incoming Payment Request
       ctx.getLogger().info("Let's store the payment request: " + paymentRequest.getId()
               + " for customer: " + paymentRequest.getCustomer());
-      ctx.callActivity(StorePaymentRequestActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
+      ctx.callActivity(StorePaymentRequestActivity.class.getName(), paymentRequest, new WorkflowTaskOptions(new WorkflowTaskRetryPolicy(5,
+                      Duration.ofSeconds(2), 1.0, Duration.ofSeconds(10), Duration.ofSeconds(20))),
+              PaymentRequest.class).await();
 
       ctx.getLogger().info("Payment request: " + paymentRequest.getId()
               + " sent to audit service.");

@@ -16,7 +16,6 @@ package io.dapr.springboot.payments;
 import io.dapr.testcontainers.Component;
 import io.dapr.testcontainers.DaprContainer;
 import io.github.microcks.testcontainers.MicrocksContainersEnsemble;
-import io.github.microcks.testcontainers.connection.KafkaConnection;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -82,10 +81,8 @@ public class DaprTestContainersConfig {
 
 
   @Bean
-  MicrocksContainersEnsemble microcksEnsemble(KafkaContainer kafkaContainer, Network network) {
-      DockerImageName nativeImage = DockerImageName.parse("quay.io/microcks/microcks-uber:1.11.2-native")
-            .asCompatibleSubstituteFor("quay.io/microcks/microcks-uber:1.9.0");
-      MicrocksContainersEnsemble ensemble = new MicrocksContainersEnsemble(network, nativeImage)
+  MicrocksContainersEnsemble microcksEnsemble(Network network) {
+    MicrocksContainersEnsemble ensemble = new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.11.2")
             .withAccessToHost(true)   // We need this to access our webapp while it runs
             .withMainArtifacts("third-parties/remote-http-service.yaml");
     return ensemble;

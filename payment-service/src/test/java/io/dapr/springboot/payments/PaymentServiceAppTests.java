@@ -20,6 +20,7 @@ import io.dapr.springboot.payments.workflow.PaymentProcessingWorkflow;
 import io.dapr.springboot.payments.workflow.SendPaymentAsyncSystemActivity;
 import io.dapr.springboot.payments.workflow.StorePaymentRequestActivity;
 import io.dapr.testcontainers.DaprContainer;
+import io.github.microcks.testcontainers.MicrocksContainersEnsemble;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import static io.restassured.RestAssured.given;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(classes = {TestPaymentsServiceApplication.class, DaprTestContainersConfig.class,
         DaprAutoConfiguration.class, PaymentsServiceRestController.class, PaymentProcessingWorkflow.class,
@@ -51,12 +53,14 @@ class PaymentServiceAppTests {
   @Autowired
   private DaprContainer daprContainer;
 
+  @Autowired
+  private MicrocksContainersEnsemble ensemble;
+
 
   @BeforeEach
   void setUp() {
     RestAssured.baseURI = "http://localhost:" + 8080;
     org.testcontainers.Testcontainers.exposeHostPorts(8080);
-
 
   }
 
@@ -84,6 +88,9 @@ class PaymentServiceAppTests {
               return paymentRequestsStore.getPaymentRequest(paymentRequest.getId()).getProcessedByExternalAsyncSystem();
             });
 
+    // Checking that retry mechanism is hitting the endpoint twice one for a 500 and then a 200
+    assertEquals(2, ensemble.getMicrocksContainer()
+            .getServiceInvocationsCount("API Payment Validator", "1.0.0"));
 
   }
 
