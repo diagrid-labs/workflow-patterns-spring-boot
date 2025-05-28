@@ -15,7 +15,7 @@ package io.dapr.springboot.workflows.asynckafka;
 
 import io.dapr.springboot.DaprAutoConfiguration;
 import io.dapr.springboot.workflows.DaprTestContainersConfig;
-import io.dapr.springboot.workflows.TestPaymentsServiceApplication;
+import io.dapr.springboot.workflows.TestWorkflowsApplication;
 import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.springboot.workflows.service.PaymentWorkflowsStore;
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /*
  * This test highlights
  */
-@SpringBootTest(classes = {TestPaymentsServiceApplication.class, DaprTestContainersConfig.class,
+@SpringBootTest(classes = {TestWorkflowsApplication.class, DaprTestContainersConfig.class,
         DaprAutoConfiguration.class},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = {"tests.dapr.local=true"}) //this property is used to start dapr for this test

@@ -10,9 +10,9 @@
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
 
-  <artifactId>payments-service</artifactId>
-  <name>payments-service</name>
-  <description>Payments Service</description>
+  <artifactId>workflows</artifactId>
+  <name>workflows</name>
+  <description>Workflow Examples</description>
   <version>1.0.0</version>
 
   <properties>
@@ -55,11 +55,6 @@
       <groupId>io.github.microcks</groupId>
       <artifactId>microcks-testcontainers</artifactId>
       <version>0.3.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -11,67 +11,51 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.workflows;
+package io.dapr.springboot.workflows.simplehttp;
 
 import io.dapr.spring.workflows.config.EnableDaprWorkflows;
 import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.springboot.workflows.service.PaymentRequestsStore;
-import io.dapr.springboot.workflows.workflow.PaymentProcessingWorkflow;
+import io.dapr.springboot.workflows.service.PaymentWorkflowsStore;
 import io.dapr.workflows.client.DaprWorkflowClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @EnableDaprWorkflows
-public class PaymentsServiceRestController {
+public class SimpleHttpRestController {
 
-  private final Logger logger = LoggerFactory.getLogger(PaymentsServiceRestController.class);
+  private final Logger logger = LoggerFactory.getLogger(SimpleHttpRestController.class);
 
   @Autowired
   private DaprWorkflowClient daprWorkflowClient;
 
-  //@TODO: this is an in-memory correlation between payment requests and workflow instances
-  private Map<String, String> paymentsWorkflows = new HashMap<>();
+  @Autowired
+  private PaymentWorkflowsStore paymentsWorkflowsStore;
+
 
   //@TODO: as this is an example, we store incoming requests in-memory
   @Autowired
   private PaymentRequestsStore paymentRequestsStore;
 
   /**
-   * Track customer endpoint.
+   * Simple Payment workflow
    *
-   * @param paymentRequest provided customer to track
-   * @return confirmation that the workflow instance was created for a given customer
+   * @param paymentRequest to be sent to a remote http service
+   * @return workflow instance id created for the payment
    */
-  @PostMapping("/pay")
+  @PostMapping("/simplehttp/start")
   public PaymentRequest placePaymentRequest(@RequestBody PaymentRequest paymentRequest) {
-    String instanceId = daprWorkflowClient.scheduleNewWorkflow(PaymentProcessingWorkflow.class, paymentRequest);
+    String instanceId = daprWorkflowClient.scheduleNewWorkflow(MakeHttpPaymentWorkflow.class, paymentRequest);
     logger.info("Workflow instance " + instanceId + " started");
-    paymentsWorkflows.put(paymentRequest.getId(), instanceId);
+    paymentRequest.setWorkflowInstanceId(instanceId);
+    paymentsWorkflowsStore.savePaymentWorkflow(paymentRequest, instanceId);
     return paymentRequest;
   }
 
-
-  @GetMapping("/requests")
-  public Collection<PaymentRequest> getPaymentRequests() {
-    return paymentRequestsStore.getPaymentRequests();
-  }
-
-  public record PaymentEvent(PaymentRequest order) {
-  }
-
-
-  public Map<String, String> getPaymentsWorkflows() {
-    return paymentsWorkflows;
-  }
 }
 

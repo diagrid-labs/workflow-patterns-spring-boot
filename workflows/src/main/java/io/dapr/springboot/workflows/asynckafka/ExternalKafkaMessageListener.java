@@ -1,6 +1,5 @@
 package io.dapr.springboot.workflows.asynckafka;
 
-import io.dapr.springboot.workflows.PaymentsServiceRestController;
 import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.springboot.workflows.service.PaymentWorkflowsStore;
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ExternalKafkaMessageListener {
 
-  private final Logger logger = LoggerFactory.getLogger(PaymentsServiceRestController.class);
+  private final Logger logger = LoggerFactory.getLogger(ExternalKafkaMessageListener.class);
 
   @Autowired
   private DaprWorkflowClient daprWorkflowClient;

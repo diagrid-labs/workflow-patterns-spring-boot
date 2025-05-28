@@ -18,10 +18,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 
 @SpringBootApplication
-public class PaymentsServiceApplication {
+public class WorkflowsApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(PaymentsServiceApplication.class, args);
+    SpringApplication.run(WorkflowsApplication.class, args);
   }
 
 }

@@ -15,7 +15,7 @@ package io.dapr.springboot.workflows.simplehttp;
 
 import io.dapr.springboot.DaprAutoConfiguration;
 import io.dapr.springboot.workflows.DaprTestContainersConfig;
-import io.dapr.springboot.workflows.TestPaymentsServiceApplication;
+import io.dapr.springboot.workflows.TestWorkflowsApplication;
 import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.springboot.workflows.service.PaymentWorkflowsStore;
@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * It uses a Microcks Ensemble to simiulate a remote HTTP endpoint that creates one failure (returning a 500)
  * with a subsequent success (200), testing the retry mechanism.
  */
-@SpringBootTest(classes = {TestPaymentsServiceApplication.class, DaprTestContainersConfig.class,
+@SpringBootTest(classes = {TestWorkflowsApplication.class, DaprTestContainersConfig.class,
         DaprAutoConfiguration.class},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = {"tests.dapr.local=true"}) //this property is used to start dapr for this test
