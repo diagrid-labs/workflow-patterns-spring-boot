@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.workflows.simplehttp;
+package io.dapr.springboot.workflows.timeoutevent;
 
 import io.dapr.springboot.DaprAutoConfiguration;
 import io.dapr.springboot.workflows.DaprTestContainersConfig;
@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
         DaprAutoConfiguration.class},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = {"tests.dapr.local=true"}) //this property is used to start dapr for this test
-class SimpleHTTPWorkflowTests {
+class TimeoutEventWorkflowTests {
 
   @Autowired
   private PaymentRequestsStore paymentRequestsStore;
@@ -69,13 +69,13 @@ class SimpleHTTPWorkflowTests {
   }
 
   @Test
-  void testSimpleHttpWorkflows() throws InterruptedException, IOException {
+  void testTimeoutEventWorkflows() throws InterruptedException, IOException {
 
     PaymentRequest paymentRequest = new PaymentRequest("123", "salaboy", 10);
     PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)
             .body(paymentRequest)
             .when()
-            .post("/simplehttp/start")
+            .post("/timeoutevent/start")
             .then()
             .statusCode(200).extract().as(PaymentRequest.class);
 
@@ -83,29 +83,28 @@ class SimpleHTTPWorkflowTests {
     assertFalse(paymentRequestResult.getWorkflowInstanceId().isEmpty());
 
     // Check that we have received a payment request
-    await().atMost(Duration.ofSeconds(5))
+    await().atMost(Duration.ofSeconds(7))
             .pollDelay(500, TimeUnit.MILLISECONDS)
             .pollInterval(500, TimeUnit.MILLISECONDS)
             .until(() -> {
-              return paymentRequestsStore.getPaymentRequests().size() == 1;
+              if (paymentRequestsStore.getPaymentRequests().size() == 1) {
+                PaymentRequest paymentRequestFromStore = paymentRequestsStore.getPaymentRequests()
+                        .iterator().next();
+                        System.out.println(paymentRequestFromStore);
+                        return paymentRequestFromStore.getRecoveredFromTimeout();
+              }
+              return false;
             });
 
-    // Checking that retry mechanism is hitting the endpoint twice one for a 500 and then a 200
-    await().atMost(Duration.ofSeconds(5))
-            .pollDelay(500, TimeUnit.MILLISECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .until(() -> {
-              return ensemble.getMicrocksContainer()
-                      .getServiceInvocationsCount("API Payment Validator", "1.0.0") == 2;
-            });
+   
 
     WorkflowInstanceStatus instanceState = daprWorkflowClient.getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
-    assertNotNull(instanceState);        
+    assertNotNull(instanceState);
+    assertEquals(WorkflowRuntimeStatus.COMPLETED, instanceState.getRuntimeStatus());
     PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
     assertNotNull(paymentRequestResultFromWorkflow);
-    assertEquals(WorkflowRuntimeStatus.COMPLETED, instanceState.getRuntimeStatus());
-
-    assertTrue(paymentRequestResultFromWorkflow.getProcessedByRemoteHttpService());
+    assertTrue(paymentRequestResultFromWorkflow.getRecoveredFromTimeout());        
+          
 
   }
 

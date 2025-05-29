@@ -180,6 +180,8 @@ Transfer-Encoding: chunked
 }
 ```
 
+The application logs should look similar to: 
+
 ```bash
 io.dapr.workflows.WorkflowContext        : Let's Update the Payment Request: 123
 i.d.s.w.s.TimersRestController           : Workflow instance eb3c82ec-0ffb-421f-9a01-0297bd562f30 started
@@ -197,5 +199,47 @@ io.dapr.workflows.WorkflowContext        : Payment request: PaymentRequest [id=1
 
 If you inspect the output, you will see that the second time that the activity is executed happens 10 seconds after the first execution. Check the timestamps: `updatedAt=[Thu May 29 10:14:46 WEST 2025, Thu May 29 10:14:56 WEST 2025]]`
 
-### Duration-based Workflow
+### Event Timeout Workflow
 
+This workflow shows how to deal with waitForExternalEvent timeouts. This example shows how to execute an activity if the 
+duration specified for waiting an event times out. If the time out happens, for this example a new activity is called.
+
+Once the application is running, you can invoke the endpoint using `cURL` or `HTTPie`.
+
+```bash
+http :8080/timeoutevent/start id="123" customer="salaboy" amount=10
+```
+
+You should see a response back from the server similar to: 
+```bash
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/json
+Date: Thu, 29 May 2025 12:51:42 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+
+{
+    "amount": 10,
+    "customer": "salaboy",
+    "id": "123",
+    "processedByExternalAsyncSystem": false,
+    "processedByRemoteHttpService": false,
+    "recoveredFromTimeout": false,
+    "updatedAt": [],
+    "workflowInstanceId": "b49cc4f8-fe0e-4d3a-9759-f0031f76749c"
+}
+```
+
+The application logs should look similar to: 
+
+```bash
+io.dapr.workflows.WorkflowContext        : Let's wait for external (async) system to get back to us: 123
+i.d.s.w.t.TimeoutEventRestController     : Workflow instance b49cc4f8-fe0e-4d3a-9759-f0031f76749c started
+
+...
+
+io.dapr.workflows.WorkflowContext        : Timeout occurred for payment: 123 let's handle it!
+i.d.s.w.t.HandleTimeoutActivity          : Handling timeout for payment: 123
+io.dapr.workflows.WorkflowContext        : Workflow completed for: 123
+```

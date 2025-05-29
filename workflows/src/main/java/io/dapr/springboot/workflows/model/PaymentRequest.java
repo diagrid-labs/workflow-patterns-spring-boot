@@ -24,6 +24,7 @@ public class PaymentRequest {
   private Integer amount;
   private Boolean processedByRemoteHttpService = false;
   private Boolean processedByExternalAsyncSystem = false;
+  private Boolean recoveredFromTimeout = false;
   private String workflowInstanceId;
   private List<Date> updatedAt  = new ArrayList<>();
 
@@ -97,13 +98,23 @@ public class PaymentRequest {
     this.updatedAt.add(updatedAt);
   }
 
+  public Boolean getRecoveredFromTimeout() {
+    return recoveredFromTimeout;
+  }
+
+  public void setRecoveredFromTimeout(Boolean recoveredFromTimeout) {
+    this.recoveredFromTimeout = recoveredFromTimeout;
+  }
+
   @Override
   public String toString() {
     return "PaymentRequest [id=" + id + ", customer=" + customer + ", amount=" + amount
         + ", processedByRemoteHttpService=" + processedByRemoteHttpService + ", processedByExternalAsyncSystem="
-        + processedByExternalAsyncSystem + ", workflowInstanceId=" + workflowInstanceId + ", updatedAt=" + updatedAt
-        + "]";
+        + processedByExternalAsyncSystem + ", recoveredFromTimeout=" + recoveredFromTimeout + ", workflowInstanceId="
+        + workflowInstanceId + ", updatedAt=" + updatedAt + "]";
   }
+
+  
 
   
 

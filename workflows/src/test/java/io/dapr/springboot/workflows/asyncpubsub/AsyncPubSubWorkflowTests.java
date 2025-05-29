@@ -91,7 +91,7 @@ class AsyncPubSubWorkflowTests {
 
 
     WorkflowInstanceStatus instanceState = daprWorkflowClient.getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
-
+    assertNotNull(instanceState);        
     PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
     assertNotNull(paymentRequestResultFromWorkflow);
     assertEquals(WorkflowRuntimeStatus.COMPLETED, instanceState.getRuntimeStatus());
