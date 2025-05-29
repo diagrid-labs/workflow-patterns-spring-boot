@@ -95,6 +95,15 @@ The workflow is complemented by a RestEndpoint that  is subscribed (with a Dapr 
 
 Once the application is running, you can invoke the endpoint using `cURL` or `HTTPie`.
 
+**Note**: to run this with Catalyst you need to:
+- Start the application with a dev tunnel `diagrid dev run --project <PROJECT_ID> --app-id <APP_ID> --app-port 8080 mvn spring-boot:test-run`
+- Create a Catalyst Subscription with the following details: 
+  - Subscription Name: `pubsub-subscription`
+  - PubSub Component: `pubsub`
+  - Scopes: select <APP_ID>
+  - Topic: `pubsubTopic`
+  - Default Route: `/asyncpubsub/continue`
+
 ```bash
 http :8080/asyncpubsub/start id="123" customer="salaboy" amount=10
 ```
@@ -187,3 +196,6 @@ io.dapr.workflows.WorkflowContext        : Payment request: PaymentRequest [id=1
 ```
 
 If you inspect the output, you will see that the second time that the activity is executed happens 10 seconds after the first execution. Check the timestamps: `updatedAt=[Thu May 29 10:14:46 WEST 2025, Thu May 29 10:14:56 WEST 2025]]`
+
+### Duration-based Workflow
+
