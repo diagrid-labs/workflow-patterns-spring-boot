@@ -13,6 +13,10 @@ limitations under the License.
 
 package io.dapr.springboot.workflows.model;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 public class PaymentRequest {
 
   private String id;
@@ -21,6 +25,7 @@ public class PaymentRequest {
   private Boolean processedByRemoteHttpService = false;
   private Boolean processedByExternalAsyncSystem = false;
   private String workflowInstanceId;
+  private List<Date> updatedAt  = new ArrayList<>();
 
   public PaymentRequest() {
 
@@ -80,15 +85,29 @@ public class PaymentRequest {
     this.processedByRemoteHttpService = processedByRemoteHttpService;
   }
 
+  public List<Date> getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(List<Date> updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  public void addUpdatedAt(Date updatedAt) {
+    this.updatedAt.add(updatedAt);
+  }
+
   @Override
   public String toString() {
-    return "PaymentRequest{" +
-            "id='" + id + '\'' +
-            ", customer='" + customer + '\'' +
-            ", amount=" + amount +
-            ", processedByRemoteHttpService=" + processedByRemoteHttpService +
-            ", processedByExternalAsyncSystem=" + processedByExternalAsyncSystem +
-            ", workflowInstanceId='" + workflowInstanceId + '\'' +
-            '}';
+    return "PaymentRequest [id=" + id + ", customer=" + customer + ", amount=" + amount
+        + ", processedByRemoteHttpService=" + processedByRemoteHttpService + ", processedByExternalAsyncSystem="
+        + processedByExternalAsyncSystem + ", workflowInstanceId=" + workflowInstanceId + ", updatedAt=" + updatedAt
+        + "]";
   }
+
+  
+
+  
+
+  
 }

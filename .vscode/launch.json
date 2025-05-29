@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "TestWorkflowsApplication",
+            "request": "launch",
+            "mainClass": "io.dapr.springboot.workflows.TestWorkflowsApplication",
+            "projectName": "workflows"
+        },
+        {
+            "type": "java",
+            "name": "Debug using Hotswap Agent",
+            "request": "launch",
+            "javaExec": "/Users/salaboy/.vaadin/jdk/jbrsdk-21.0.7-osx-aarch64-b992.24/Contents/Home/bin/java",
+            "mainClass": "io.dapr.springboot.workflows.WorkflowsApplication",
+            "vmArgs": "-XX:+AllowEnhancedClassRedefinition -XX:+ClassUnloading -XX:HotswapAgent=fatjar"
+        }
+    ]
+}

@@ -14,6 +14,12 @@ limitations under the License.
 package io.dapr.springboot.workflows.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.dapr.client.DaprClient;
+import io.dapr.spring.boot.autoconfigure.pubsub.DaprPubSubProperties;
+import io.dapr.spring.messaging.DaprMessagingTemplate;
+import io.dapr.springboot.workflows.model.PaymentRequest;
+
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
@@ -21,17 +27,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@EnableConfigurationProperties()
+@EnableConfigurationProperties({DaprPubSubProperties.class})
 public class WorkflowsAppConfiguration {
   @Bean
   public ObjectMapper mapper() {
-    return new ObjectMapper();
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    return mapper;
   }
-
 
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplateBuilder().build();
+  }
+
+  @Bean
+  public DaprMessagingTemplate<PaymentRequest> messagingTemplate(DaprClient daprClient,
+                                                        DaprPubSubProperties daprPubSubProperties) {
+    return new DaprMessagingTemplate<>(daprClient, daprPubSubProperties.getName(), false);
   }
 
 }

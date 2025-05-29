@@ -15,6 +15,7 @@ package io.dapr.springboot.workflows;
 
 import io.dapr.testcontainers.Component;
 import io.dapr.testcontainers.DaprContainer;
+import io.dapr.testcontainers.Subscription;
 import io.github.microcks.testcontainers.MicrocksContainersEnsemble;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -30,7 +31,9 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @TestConfiguration(proxyBeanMethods = false)
 public class DaprTestContainersConfig {
@@ -103,17 +106,17 @@ public class DaprTestContainersConfig {
   @ConditionalOnProperty(prefix = "tests", name = "dapr.local", havingValue = "true")
   public DaprContainer daprContainer(Network daprNetwork, KafkaContainer kafkaContainer) {
 
-//    Map<String, String> kafkaProperties = new HashMap<>();
-//    kafkaProperties.put("brokers", "kafka:19092");
-//    kafkaProperties.put("authType", "none");
+    Map<String, String> kafkaProperties = new HashMap<>();
+    kafkaProperties.put("brokers", "kafka:19092");
+    kafkaProperties.put("authType", "none");
 
     return new DaprContainer("daprio/daprd:1.15.4")
             .withAppName("payment-service")
             .withNetwork(daprNetwork)
             .withComponent(new Component("kvstore", "state.in-memory", "v1",
                     Collections.singletonMap("actorStateStore", "true")))
-            //.withComponent(new Component("pubsub", "pubsub.kafka", "v1", kafkaProperties))
-            //.withSubscription(new Subscription("app", "pubsub", "topic", "/subscribe"))
+            .withComponent(new Component("pubsub", "pubsub.kafka", "v1", kafkaProperties))
+            .withSubscription(new Subscription("app", "pubsub", "pubsubTopic", "/asyncpubsub/continue"))
 //            .withDaprLogLevel(DaprLogLevel.DEBUG)
 //            .withLogConsumer(outputFrame -> System.out.println(outputFrame.getUtf8String()))
             .withAppPort(8080)
