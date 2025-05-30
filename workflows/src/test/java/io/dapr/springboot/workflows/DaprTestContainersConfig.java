@@ -15,6 +15,7 @@ package io.dapr.springboot.workflows;
 
 import io.dapr.testcontainers.Component;
 import io.dapr.testcontainers.DaprContainer;
+import io.dapr.testcontainers.DaprLogLevel;
 import io.dapr.testcontainers.Subscription;
 import io.github.microcks.testcontainers.MicrocksContainersEnsemble;
 import org.junit.runner.Description;
@@ -111,12 +112,13 @@ public class DaprTestContainersConfig {
     kafkaProperties.put("authType", "none");
 
     return new DaprContainer("daprio/daprd:1.15.4")
-            .withAppName("payment-service")
+            .withAppName("workflows")
             .withNetwork(daprNetwork)
             .withComponent(new Component("kvstore", "state.in-memory", "v1",
                     Collections.singletonMap("actorStateStore", "true")))
             .withComponent(new Component("pubsub", "pubsub.kafka", "v1", kafkaProperties))
             .withSubscription(new Subscription("app", "pubsub", "pubsubTopic", "/asyncpubsub/continue"))
+//  Uncomment if you want to troubleshoot Dapr related problems
 //            .withDaprLogLevel(DaprLogLevel.DEBUG)
 //            .withLogConsumer(outputFrame -> System.out.println(outputFrame.getUtf8String()))
             .withAppPort(8080)
@@ -124,9 +126,6 @@ public class DaprTestContainersConfig {
             .withAppChannelAddress("host.testcontainers.internal")
             .dependsOn(kafkaContainer);
   }
-
-
-
 
 
 }

@@ -27,10 +27,11 @@ public class AsyncKafkaWorkflow implements Workflow {
   public WorkflowStub create() {
     return ctx -> {
       String instanceId = ctx.getInstanceId();
+      ctx.getLogger().info("Workflow instance " + instanceId + " started");
       PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
 
       ctx.getLogger().info("Let's send the payment request to an async external system: " + paymentRequest.getId());
-      ctx.callActivity(SendPaymentAsyncSystemActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
+      ctx.callActivity(SendPaymentViaKafkActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
 
       // Wait for the external system to get back to us
       ctx.getLogger().info("Let's wait for external (async) system to get back to us: " + paymentRequest.getId());

@@ -17,7 +17,6 @@ import io.dapr.spring.workflows.config.EnableDaprWorkflows;
 import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.springboot.workflows.service.PaymentWorkflowsStore;
-import io.dapr.springboot.workflows.simplehttp.MakeHttpPaymentWorkflow;
 import io.dapr.workflows.client.DaprWorkflowClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,6 @@ public class AsyncKafkaRestController {
   @PostMapping("/asynckafka/start")
   public PaymentRequest placePaymentRequest(@RequestBody PaymentRequest paymentRequest) {
     String instanceId = daprWorkflowClient.scheduleNewWorkflow(AsyncKafkaWorkflow.class, paymentRequest);
-    logger.info("Workflow instance " + instanceId + " started");
     paymentRequest.setWorkflowInstanceId(instanceId);
     paymentsWorkflowsStore.savePaymentWorkflow(paymentRequest, instanceId);
     return paymentRequest;

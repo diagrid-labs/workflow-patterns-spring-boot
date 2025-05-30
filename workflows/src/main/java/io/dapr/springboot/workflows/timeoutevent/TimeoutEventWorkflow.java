@@ -28,13 +28,15 @@ public class TimeoutEventWorkflow implements Workflow {
   @Override
   public WorkflowStub create() {
     return ctx -> {
+      String instanceId = ctx.getInstanceId();
+      ctx.getLogger().info("Workflow instance " + instanceId + " started");
       PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
 
       //Wait for an event that will never arrive, but we will handle the timeout
       try{  
         ctx.getLogger().info("Let's wait for external (async) system to get back to us: " + paymentRequest.getId());
         ctx.waitForExternalEvent("Continue", 
-                                  Duration.ofSeconds(2), 
+                                  Duration.ofSeconds(3), 
                                   PaymentRequest.class).await();
       } catch (io.dapr.durabletask.TaskCanceledException e) {
         ctx.getLogger().info("Timeout occurred for payment: " + paymentRequest.getId() + " let's handle it!");

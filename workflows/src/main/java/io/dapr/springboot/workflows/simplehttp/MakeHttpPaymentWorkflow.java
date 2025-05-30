@@ -28,6 +28,8 @@ public class MakeHttpPaymentWorkflow implements Workflow {
   @Override
   public WorkflowStub create() {
     return ctx -> {
+      String instanceId = ctx.getInstanceId();
+      ctx.getLogger().info("Workflow instance " + instanceId + " started");
       PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
       ctx.getLogger().info("Let's make a payment: " + paymentRequest.getId()
               + " for customer: " + paymentRequest.getCustomer());

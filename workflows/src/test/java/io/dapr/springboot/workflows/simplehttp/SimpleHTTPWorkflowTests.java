@@ -44,10 +44,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * It uses a Microcks Ensemble to simiulate a remote HTTP endpoint that creates one failure (returning a 500)
  * with a subsequent success (200), testing the retry mechanism.
  */
-@SpringBootTest(classes = {TestWorkflowsApplication.class, DaprTestContainersConfig.class,
-        DaprAutoConfiguration.class},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@TestPropertySource(properties = {"tests.dapr.local=true"}) //this property is used to start dapr for this test
+@SpringBootTest(classes = { TestWorkflowsApplication.class, DaprTestContainersConfig.class,
+    DaprAutoConfiguration.class }, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@TestPropertySource(properties = { "tests.dapr.local=true" }) // this property is used to start dapr for this test
 class SimpleHTTPWorkflowTests {
 
   @Autowired
@@ -66,6 +65,7 @@ class SimpleHTTPWorkflowTests {
   void setUp() {
     RestAssured.baseURI = "http://localhost:" + 8080;
     org.testcontainers.Testcontainers.exposeHostPorts(8080);
+    paymentRequestsStore.getPaymentRequests().clear();
   }
 
   @Test
@@ -73,39 +73,53 @@ class SimpleHTTPWorkflowTests {
 
     PaymentRequest paymentRequest = new PaymentRequest("123", "salaboy", 10);
     PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)
-            .body(paymentRequest)
-            .when()
-            .post("/simplehttp/start")
-            .then()
-            .statusCode(200).extract().as(PaymentRequest.class);
+        .body(paymentRequest)
+        .when()
+        .post("/simplehttp/start")
+        .then()
+        .statusCode(200).extract().as(PaymentRequest.class);
 
     // Check that I have an instance id
     assertFalse(paymentRequestResult.getWorkflowInstanceId().isEmpty());
 
     // Check that we have received a payment request
     await().atMost(Duration.ofSeconds(5))
-            .pollDelay(500, TimeUnit.MILLISECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .until(() -> {
-              return paymentRequestsStore.getPaymentRequests().size() == 1;
-            });
+        .pollDelay(500, TimeUnit.MILLISECONDS)
+        .pollInterval(500, TimeUnit.MILLISECONDS)
+        .until(() -> {
+          return paymentRequestsStore.getPaymentRequests().size() == 1;
+        });
 
-    // Checking that retry mechanism is hitting the endpoint twice one for a 500 and then a 200
+    // Checking that retry mechanism is hitting the endpoint twice one for a 500 and
+    // then a 200
     await().atMost(Duration.ofSeconds(5))
-            .pollDelay(500, TimeUnit.MILLISECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .until(() -> {
-              return ensemble.getMicrocksContainer()
-                      .getServiceInvocationsCount("API Payment Validator", "1.0.0") == 2;
-            });
+        .pollDelay(500, TimeUnit.MILLISECONDS)
+        .pollInterval(500, TimeUnit.MILLISECONDS)
+        .until(() -> {
+          return ensemble.getMicrocksContainer()
+              .getServiceInvocationsCount("API Payment Validator", "1.0.0") == 2;
+        });
 
-    WorkflowInstanceStatus instanceState = daprWorkflowClient.getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
-    assertNotNull(instanceState);        
-    PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
-    assertNotNull(paymentRequestResultFromWorkflow);
-    assertEquals(WorkflowRuntimeStatus.COMPLETED, instanceState.getRuntimeStatus());
+    // Check that the workflow completed successfully
+    await().atMost(Duration.ofSeconds(10))
+        .pollDelay(500, TimeUnit.MILLISECONDS)
+        .pollInterval(500, TimeUnit.MILLISECONDS)
+        .until(() -> {
+          WorkflowInstanceStatus instanceState = daprWorkflowClient
+              .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
+          if (instanceState == null) {
+            return false;
+          }
+          if (!instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED)) {
+            return false;
+          }
+          PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
+          if (paymentRequestResultFromWorkflow == null) {
+            return false;
+          }
 
-    assertTrue(paymentRequestResultFromWorkflow.getProcessedByRemoteHttpService());
+          return paymentRequestResultFromWorkflow.getProcessedByRemoteHttpService();
+        });
 
   }
 

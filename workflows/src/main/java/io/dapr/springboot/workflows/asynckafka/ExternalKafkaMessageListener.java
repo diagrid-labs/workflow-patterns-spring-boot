@@ -29,7 +29,7 @@ public class ExternalKafkaMessageListener {
    *  @param paymentRequest associated with a workflow instance
    *  @return confirmation that the follow-up was requested
    */
-  @KafkaListener(topics = "${REMOTE_KAFKA_TOPIC:topic}", groupId = "payments-service")
+  @KafkaListener(topics = "${REMOTE_KAFKA_TOPIC:topic}", groupId = "workflows")
   public String paymentRequestApproval(PaymentRequest paymentRequest) {
     logger.info("Payment request approval requested: " + paymentRequest.getId());
     String workflowIdForPayment = paymentWorkflowsStore.getPaymentWorkflowInstanceId(paymentRequest.getId());

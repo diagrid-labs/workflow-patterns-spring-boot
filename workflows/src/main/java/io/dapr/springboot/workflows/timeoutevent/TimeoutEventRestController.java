@@ -51,10 +51,23 @@ public class TimeoutEventRestController {
   @PostMapping("/timeoutevent/start")
   public PaymentRequest placePaymentRequest(@RequestBody PaymentRequest paymentRequest) {
     String instanceId = daprWorkflowClient.scheduleNewWorkflow(TimeoutEventWorkflow.class, paymentRequest);
-    logger.info("Workflow instance " + instanceId + " started");
     paymentRequest.setWorkflowInstanceId(instanceId);
     paymentsWorkflowsStore.savePaymentWorkflow(paymentRequest, instanceId);
     return paymentRequest;
+  }
+
+  @PostMapping("/timeoutevent/continue")
+  public PaymentRequest continuePayment(@RequestBody PaymentRequest paymentRequest) {
+    logger.info("Payment request continue requested: " + paymentRequest.getId());
+    String workflowIdForPayment = paymentsWorkflowsStore.getPaymentWorkflowInstanceId(paymentRequest.getId());
+    
+    if (workflowIdForPayment == null || workflowIdForPayment.isEmpty()) {
+      return null;
+    } else {
+      paymentRequestsStore.savePaymentRequest(paymentRequest);
+      daprWorkflowClient.raiseEvent(workflowIdForPayment, "Continue", paymentRequest);
+      return paymentRequest;
+    }
   }
 
 }

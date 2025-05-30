@@ -66,6 +66,7 @@ class TimersWorkflowTests {
   void setUp() {
     RestAssured.baseURI = "http://localhost:" + 8080;
     org.testcontainers.Testcontainers.exposeHostPorts(8080);
+    paymentRequestsStore.getPaymentRequests().clear();
   }
 
   @Test
@@ -100,21 +101,33 @@ class TimersWorkflowTests {
             });
 
    
+    // Check that the workflow completed successfully
+    await().atMost(Duration.ofSeconds(10))
+        .pollDelay(500, TimeUnit.MILLISECONDS)
+        .pollInterval(500, TimeUnit.MILLISECONDS)
+        .until(() -> {
+          WorkflowInstanceStatus instanceState = daprWorkflowClient
+                    .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
+            if(instanceState == null){
+              return false;
+            }
+            if(!instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED)){
+              return false;
+            }
+            PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
+            if(paymentRequestResultFromWorkflow == null){
+              return false;
+            }
 
-    WorkflowInstanceStatus instanceState = daprWorkflowClient.getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
-    assertNotNull(instanceState);        
-    PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
-    assertNotNull(paymentRequestResultFromWorkflow);
-    assertEquals(WorkflowRuntimeStatus.COMPLETED, instanceState.getRuntimeStatus());
-
-    assertEquals(2, paymentRequestResultFromWorkflow.getUpdatedAt().size());
-
-    long diffInMillies = Math.abs(paymentRequestResultFromWorkflow.getUpdatedAt().get(0).getTime() - paymentRequestResultFromWorkflow.getUpdatedAt().get(1).getTime());
-    
-    long diff = TimeUnit.SECONDS.convert(diffInMillies, TimeUnit.MILLISECONDS);
-    
-    // The updated time differences should be between 9 and 11 seconds
-    assertTrue( diff >= 9 && diff <= 11 );
+            if(paymentRequestResultFromWorkflow.getUpdatedAt().size() != 2){
+              return false;
+            }
+            
+            long diffInMillies = Math.abs(paymentRequestResultFromWorkflow.getUpdatedAt().get(0).getTime() - paymentRequestResultFromWorkflow.getUpdatedAt().get(1).getTime());
+            long diff = TimeUnit.SECONDS.convert(diffInMillies, TimeUnit.MILLISECONDS);
+            // The updated time differences should be between 9 and 11 seconds
+            return diff >= 9 && diff <= 11 ;
+        });        
           
 
   }

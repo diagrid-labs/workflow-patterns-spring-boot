@@ -51,7 +51,6 @@ public class SimpleHttpRestController {
   @PostMapping("/simplehttp/start")
   public PaymentRequest placePaymentRequest(@RequestBody PaymentRequest paymentRequest) {
     String instanceId = daprWorkflowClient.scheduleNewWorkflow(MakeHttpPaymentWorkflow.class, paymentRequest);
-    logger.info("Workflow instance " + instanceId + " started");
     paymentRequest.setWorkflowInstanceId(instanceId);
     paymentsWorkflowsStore.savePaymentWorkflow(paymentRequest, instanceId);
     return paymentRequest;

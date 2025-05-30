@@ -27,6 +27,7 @@ public class AsyncPusSubWorkflow implements Workflow {
   public WorkflowStub create() {
     return ctx -> {
       String instanceId = ctx.getInstanceId();
+      ctx.getLogger().info("Workflow instance " + instanceId + " started");
       PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
 
       ctx.getLogger().info("Let's send the payment request to an async external system: " + paymentRequest.getId());

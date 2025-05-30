@@ -29,16 +29,16 @@ import org.springframework.stereotype.Component;
  This activity shows how to place a Kafka Message to a Broker
  */
 @Component
-public class SendPaymentAsyncSystemActivity implements WorkflowActivity {
+public class SendPaymentViaKafkActivity implements WorkflowActivity {
 
-  private final Logger logger = LoggerFactory.getLogger(SendPaymentAsyncSystemActivity.class);
+  private final Logger logger = LoggerFactory.getLogger(SendPaymentViaKafkActivity.class);
 
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
   @Autowired
   private PaymentRequestsStore paymentRequestsStore;
 
-  public SendPaymentAsyncSystemActivity(KafkaTemplate<String, Object> kafkaTemplate ) {
+  public SendPaymentViaKafkActivity(KafkaTemplate<String, Object> kafkaTemplate ) {
     this.kafkaTemplate = kafkaTemplate;
   }
 
@@ -48,7 +48,6 @@ public class SendPaymentAsyncSystemActivity implements WorkflowActivity {
   @Override
   public Object run(WorkflowActivityContext ctx) {
     PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
-
     paymentRequestsStore.savePaymentRequest(paymentRequest);
     logger.info("Placing a kafka message from Activity: " + ctx.getName());
     kafkaTemplate.send(kafkaTopic, paymentRequest);
