@@ -11,9 +11,10 @@ mvn spring-boot:test-run
 
 **Note:** If you want to run this examples against Diagrid's Catalyst, you need to comment out the following line in the `application.properties` file located in `src/test/resources/`:
 
+```
 #comment out to run tests against Catalyst
 tests.dapr.local=true
-
+```
 
 ## Patterns
 
@@ -23,13 +24,14 @@ The `workflows` Maven project contains different workflow patterns showing also 
 - Async Kafka producer and consumer  (`asynckafka`)
 - Async PubSub producer and consumer (`asyncpubsub`)
 - Simple Timer (`simpletimer`)
+- Compensate On Error (`compensanteonerror`)
 
 
 ### Simple HTTP with retry policies
 
 This example shows a workflow with a single activity that performs a remote HTTP endpoint call. This activity is configured to retry if the HTTP endpoint call fails. 
 
-Once the application is running, you can invoke the endpoint using `cURL` or `HTTPie`.
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
 
 ```bash
 http :8080/simplehttp/start id="123" customer="salaboy" amount=10
@@ -37,7 +39,7 @@ http :8080/simplehttp/start id="123" customer="salaboy" amount=10
 
 As soon as the workflow is started, you get a response back containing the `workflowInstanceId` set: 
 
-```
+```bash
 {
     "amount": 10,
     "customer": "salaboy",
@@ -67,7 +69,7 @@ This workflow consist on an activity that produce a Kafka message into a Kafka t
 
 The workflow is complemented by a KafkaListener that consume messages from a topic and then raise a workflow event using the workflowInstanceId to target the right workflow instance. 
 
-Once the application is running, you can invoke the endpoint using `cURL` or `HTTPie`.
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
 
 ```bash
 http :8080/asynckafka/start id="123" customer="salaboy" amount=10
@@ -93,7 +95,7 @@ This workflow consist on an activity that produce a message using the Dapr PubSu
 
 The workflow is complemented by a RestEndpoint that  is subscribed (with a Dapr Subscription) to consume messages from a topic and then raise a workflow event using the workflowInstanceId to continue the right workflow instance. 
 
-Once the application is running, you can invoke the endpoint using `cURL` or `HTTPie`.
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
 
 **Note**: to run this with Catalyst you need to:
 - Start the application with a dev tunnel `diagrid dev run --project <PROJECT_ID> --app-id <APP_ID> --app-port 8080 mvn spring-boot:test-run`
@@ -154,7 +156,7 @@ The workflow consist of three steps:
 
 The PaymentRequest payload stores the timestamps when the activities where executed, allowing us to validate that the timer was triggered at the right time.
 
-Once the application is running, you can invoke the endpoint using `cURL` or `HTTPie`.
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
 
 ```bash
 http :8080/simpletimer/start id="123" customer="salaboy" amount=10
@@ -204,7 +206,7 @@ If you inspect the output, you will see that the second time that the activity i
 This workflow shows how to deal with waitForExternalEvent timeouts. This example shows how to execute an activity if the 
 duration specified for waiting an event times out. If the time out happens, for this example a new activity is called.
 
-Once the application is running, you can invoke the endpoint using `cURL` or `HTTPie`.
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
 
 ```bash
 http :8080/timeoutevent/start id="123" customer="salaboy" amount=10
@@ -242,4 +244,55 @@ i.d.s.w.t.TimeoutEventRestController     : Workflow instance b49cc4f8-fe0e-4d3a-
 io.dapr.workflows.WorkflowContext        : Timeout occurred for payment: 123 let's handle it!
 i.d.s.w.t.HandleTimeoutActivity          : Handling timeout for payment: 123
 io.dapr.workflows.WorkflowContext        : Workflow completed for: 123
+```
+
+### Compensate on Error
+
+This example shows how to use the CompensationHelper to register compensation activities that can be associated to workflow activities. 
+Compensation activities should include the logic to define how the compensation should be performed, this can be by checking that previous operations were performed and then implement how to perform the compensation. 
+
+This example shows a workflow that perform to debit operations from different accounts, if one fails we need to make sure that both accounts end up with the same balance as before the workflow started. 
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```bash
+http :8080/compensateonerror/start id="123" customer="other" amount=10
+```
+
+The output should show something like: 
+
+```bash
+{
+    "amount": 10,
+    "customer": "other",
+    "id": "123",
+    "processedByExternalAsyncSystem": false,
+    "processedByRemoteHttpService": false,
+    "recoveredFromTimeout": false,
+    "updatedAt": [],
+    "workflowInstanceId": "a08c17b2-d0ed-492e-9c4a-52898c58a844"
+}
+
+```
+If you look into the application output you should see:
+
+```bash
+io.dapr.workflows.WorkflowContext        : Workflow instance a08c17b2-d0ed-492e-9c4a-52898c58a844 started
+io.dapr.workflows.WorkflowContext        : Let's debit a payment: 123 for customer: other
+
+//First debit is processed correctly
+
+io.dapr.workflows.WorkflowContext        : Debit request: PaymentRequest [id=123, customer=other, amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]] sent to payment service.
+
+//Result from remote endpoint
+i.d.s.w.c.DebitPaymentRequestActivity    : Debit Payment Result: AuditPaymentPayload{paymentRequestId='123', customer='other', amount=10, message='Other customer's debit'}
+
+//Second debit for an invalid customer will fail
+
+io.dapr.workflows.WorkflowContext        : Let's debit a payment: 456 for customer: salaboy
+io.dapr.workflows.WorkflowContext        : Task failed: Task 'io.dapr.springboot.workflows.compensateonerror.DebitPaymentRequestActivity' (#1) failed with an unhandled exception: Invalid Customer! - compensating.
+
+//The compensation kicks in and send a credit request for the first order after checking that the debit was performed
+CompensationCreditPaymentRequestActivity : Credit Payment Result: AuditPaymentPayload{paymentRequestId='123', customer='salaboy', amount=10, message='Salaboy's credit'}
+CompensationCreditPaymentRequestActivity : Credit PaymentRequest: 123 sent.
 ```

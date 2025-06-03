@@ -31,14 +31,16 @@ public class MakeHttpPaymentWorkflow implements Workflow {
       String instanceId = ctx.getInstanceId();
       ctx.getLogger().info("Workflow instance " + instanceId + " started");
       PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
+
+      WorkflowTaskRetryPolicy workflowTaskRetryPolicy = new WorkflowTaskRetryPolicy(2,
+              Duration.ofSeconds(1),
+              1.0,
+              Duration.ofSeconds(5),
+              Duration.ofSeconds(10));
       ctx.getLogger().info("Let's make a payment: " + paymentRequest.getId()
               + " for customer: " + paymentRequest.getCustomer());
       paymentRequest = ctx.callActivity(MakePaymentRequestActivity.class.getName(), paymentRequest,
-              new WorkflowTaskOptions(new WorkflowTaskRetryPolicy(2,
-                      Duration.ofSeconds(2),
-                      1.0,
-                      Duration.ofSeconds(5),
-                      Duration.ofSeconds(10))),
+              new WorkflowTaskOptions(workflowTaskRetryPolicy),
               PaymentRequest.class).await();
 
       ctx.getLogger().info("Payment request: " + paymentRequest

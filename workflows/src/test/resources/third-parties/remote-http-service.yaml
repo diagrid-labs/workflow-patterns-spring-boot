@@ -63,6 +63,60 @@ paths:
           description: Error Payment
       operationId: Pay
       summary: Customer Payment
+  /debit:
+    summary: Debit
+    post:
+      tags:
+        - debit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              examples:
+                CustomerA:
+                  value:
+                    paymentRequestId: 123
+                    customer: other
+                    amount: 10
+                    message: Other customer's debit
+          description: Debit Customer account
+      operationId: Debit
+      summary: Debit from Customer account
+  /credit:
+    summary: Credit
+    post:
+      tags:
+        - credit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              examples:
+                CustomerA:
+                  value:
+                    paymentRequestId: 123
+                    customer: salaboy
+                    amount: 10
+                    message: Salaboy's credit
+          description: Credit Customer account
+      operationId: Credit
+      summary: Credit to Customer account    
 components:
   schemas:
     Payment:
