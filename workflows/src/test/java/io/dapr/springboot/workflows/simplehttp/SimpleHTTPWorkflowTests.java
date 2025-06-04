@@ -71,6 +71,9 @@ class SimpleHTTPWorkflowTests {
   @Test
   void testSimpleHttpWorkflows() throws InterruptedException, IOException {
 
+    Long callsToRemoteServiceBeforeStart = ensemble.getMicrocksContainer()
+            .getServiceInvocationsCount("API Payment Validator", "1.0.0");
+
     PaymentRequest paymentRequest = new PaymentRequest("123", "salaboy", 10);
     PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)
         .body(paymentRequest)
@@ -95,11 +98,8 @@ class SimpleHTTPWorkflowTests {
     await().atMost(Duration.ofSeconds(20))
         .pollDelay(500, TimeUnit.MILLISECONDS)
         .pollInterval(500, TimeUnit.MILLISECONDS)
-        .until(() ->  {
-
-          return ensemble.getMicrocksContainer()
-                  .getServiceInvocationsCount("API Payment Validator", "1.0.0") >= 2;
-        } );
+        .until(() ->  (ensemble.getMicrocksContainer()
+                  .getServiceInvocationsCount("API Payment Validator", "1.0.0") - callsToRemoteServiceBeforeStart) == 2);
 
     // Check that the workflow completed successfully
     await().atMost(Duration.ofSeconds(10))

@@ -25,6 +25,7 @@ The `workflows` Maven project contains different workflow patterns showing also 
 - Async PubSub producer and consumer (`asyncpubsub`)
 - Simple Timer (`simpletimer`)
 - Compensate On Error (`compensanteonerror`)
+- Async Tasks (`asynctasks`)
 
 
 ### Simple HTTP with retry policies
@@ -295,4 +296,68 @@ io.dapr.workflows.WorkflowContext        : Task failed: Task 'io.dapr.springboot
 //The compensation kicks in and send a credit request for the first order after checking that the debit was performed
 CompensationCreditPaymentRequestActivity : Credit Payment Result: AuditPaymentPayload{paymentRequestId='123', customer='salaboy', amount=10, message='Salaboy's credit'}
 CompensationCreditPaymentRequestActivity : Credit PaymentRequest: 123 sent.
+```
+
+### Async Tasks
+
+This example shows how to use Async Tasks with Dapr Workflows. By default all Tasks are async and handled by [Project Reactor](https://projectreactor.io/) in a separate thread. Tasks are scheduled when the ctx.callActivity() method is used and the workflow developer can choose to wait for the task to complete by blocking the workflow thread or to rely on the async nature of tasks and register a callback for when the tasks is completed.
+
+This example shows a Workflow that schedule two activities, that are chained to each other. This means that: 
+- Activity one is scheduled with a callback / promise to call Activity two when Activity one is finished
+- Activity two also register a callback to complete the workflow instance when Activity two is finished
+
+To make Activities synchronous developers need to use the `.await()` method to block the thread to move forward. This example shows how can we chain tasks to callbacks / promises. 
+
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+```
+http :8080/asynctasks/start id="123" customer="salaboy" amount=10
+```
+
+You should see the output similar to this: 
+```
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/json
+Date: Wed, 04 Jun 2025 09:56:44 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+
+{
+    "amount": 10,
+    "customer": "salaboy",
+    "id": "123",
+    "processedByExternalAsyncSystem": false,
+    "processedByRemoteHttpService": false,
+    "recoveredFromTimeout": false,
+    "updatedAt": [],
+    "workflowInstanceId": "6c30fd18-ae6b-41e2-af83-3bf59c5d94a1"
+}
+```
+
+In the application output you should see: 
+```
+io.dapr.workflows.WorkflowContext        : Workflow instance 6d0b91b8-c8d9-4a88-a6ff-7e8d5464a602 started
+
+... // The user has the control back right after the instanceId is obtained
+
+io.dapr.workflows.WorkflowContext        : Let's make a payment: 123 for customer: salaboy
+
+... // The Activity is scheduled but the workflow is not blocking, as a callback/promise has been registered.
+
+i.d.s.w.a.TaskWithAsyncLogicActivity     : Payment Result: AuditPaymentPayload{paymentRequestId='123', customer='other', amount=10, message='Other customer's debit'}
+i.d.s.w.a.TaskWithAsyncLogicActivity     : PaymentRequest: 123 sent.
+
+... // When the activity is finished the callback/promise is called and the next Activity is executed using the results of the previous one
+
+io.dapr.workflows.WorkflowContext        : Let's make a payment: 456 for customer: salaboy
+
+... // The second activity is scheduled and a callback/promise is registered to complete the workflow when the second activity is finished
+
+i.d.s.w.a.TaskWithAsyncLogicActivity     : Payment Result: AuditPaymentPayload{paymentRequestId='123', customer='other', amount=10, message='Other customer's debit'}
+i.d.s.w.a.TaskWithAsyncLogicActivity     : PaymentRequest: 456 sent.
+
+... // When the second activity is over, the workflow is completed.
+
+io.dapr.workflows.WorkflowContext        : Completing the workflow async, when Activity 2 has finished 
 ```

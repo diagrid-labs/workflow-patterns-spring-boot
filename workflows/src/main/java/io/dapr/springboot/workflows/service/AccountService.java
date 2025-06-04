@@ -1,4 +1,4 @@
-package io.dapr.springboot.workflows.compensateonerror;
+package io.dapr.springboot.workflows.service;
 
 import org.springframework.stereotype.Component;
 
@@ -29,6 +29,10 @@ public class AccountService {
 
   public Integer getCustomerBalance(String customer){
     return customersBalance.get(customer);
+  }
+
+  public void resetBalances(){
+    customersBalance.clear();
   }
 
 }

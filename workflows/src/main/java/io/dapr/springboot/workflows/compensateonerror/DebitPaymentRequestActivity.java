@@ -16,6 +16,7 @@ package io.dapr.springboot.workflows.compensateonerror;
 
 import io.dapr.springboot.workflows.model.PaymentPayload;
 import io.dapr.springboot.workflows.model.PaymentRequest;
+import io.dapr.springboot.workflows.service.AccountService;
 import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.workflows.WorkflowActivity;
 import io.dapr.workflows.WorkflowActivityContext;

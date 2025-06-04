@@ -11,12 +11,12 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.workflows.compensateonerror;
+package io.dapr.springboot.workflows.asynctasks;
 
 
+import io.dapr.springboot.workflows.service.AccountService;
 import io.dapr.springboot.workflows.model.PaymentPayload;
 import io.dapr.springboot.workflows.model.PaymentRequest;
-import io.dapr.springboot.workflows.service.AccountService;
 import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.workflows.WorkflowActivity;
 import io.dapr.workflows.WorkflowActivityContext;
@@ -32,10 +32,9 @@ import org.springframework.web.client.RestTemplate;
  This activity shows how to interact with an external HTTP endpoint from an activity.
  */
 @Component
+public class TaskWithAsyncLogicActivity implements WorkflowActivity {
 
-public class CompensationCreditPaymentRequestActivity implements WorkflowActivity {
-
-  private final Logger logger = LoggerFactory.getLogger(CompensationCreditPaymentRequestActivity.class);
+  private final Logger logger = LoggerFactory.getLogger(TaskWithAsyncLogicActivity.class);
   private final PaymentRequestsStore paymentRequestsStore;
 
   @Autowired
@@ -45,41 +44,29 @@ public class CompensationCreditPaymentRequestActivity implements WorkflowActivit
   private String validationBaseURL;
 
   @Autowired
-  private CompensationHelper workflowAuditBean;
-
-  @Autowired
   private AccountService accountService;
 
-  public CompensationCreditPaymentRequestActivity(PaymentRequestsStore ordersStore) {
+  public TaskWithAsyncLogicActivity(PaymentRequestsStore ordersStore) {
     this.paymentRequestsStore = ordersStore;
   }
 
   @Override
   public Object run(WorkflowActivityContext ctx) {
-
     PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
 
-    // I need to check that a debit was performed to execute the credit
-    if( paymentRequestsStore.getPaymentRequest(paymentRequest.getId()) != null ){
-      // If a payment was made then I need to roll it back with a Credit
-      if(validationBaseURL != null && !validationBaseURL.isEmpty()) {
-        // Define the shape of the request for the remote service
-        HttpEntity<PaymentPayload> request =
-                new HttpEntity<>(new PaymentPayload(paymentRequest.getId(),
-                        paymentRequest.getCustomer(), paymentRequest.getAmount(), "Payment accepted for processing"));
-        PaymentPayload paymentResult =
-                restTemplate.postForObject(validationBaseURL + "/credit", request, PaymentPayload.class);
-        logger.info("Credit Payment Result: " + paymentResult);
-        paymentRequest.setProcessedByRemoteHttpService(true);
-      }
-      logger.info("Credit PaymentRequest: " + paymentRequest.getId() + " sent.");
-      paymentRequestsStore.savePaymentRequest(paymentRequest);
-      accountService.credit(paymentRequest.getCustomer(), paymentRequest.getAmount());
-    } else{
-      //explicit no NO-OP
+    if(validationBaseURL != null && !validationBaseURL.isEmpty()) {
+      // Define the shape of the request for the remote service
+      HttpEntity<PaymentPayload> request =
+              new HttpEntity<>(new PaymentPayload(paymentRequest.getId(),
+                      paymentRequest.getCustomer(), paymentRequest.getAmount(), "Payment accepted for processing"));
+      PaymentPayload paymentResult =
+              restTemplate.postForObject(validationBaseURL + "/debit", request, PaymentPayload.class);
+      logger.info("Payment Result: " + paymentResult);
+      paymentRequest.setProcessedByRemoteHttpService(true);
     }
-
-
+    logger.info("PaymentRequest: " + paymentRequest.getId() + " sent.");
+    paymentRequestsStore.savePaymentRequest(paymentRequest);
+    accountService.debit(paymentRequest.getCustomer(), paymentRequest.getAmount());
     return paymentRequest;
   }
 

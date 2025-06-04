@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.workflows.compensateonerror;
+package io.dapr.springboot.workflows.asynctasks;
 
 import io.dapr.springboot.DaprAutoConfiguration;
 import io.dapr.springboot.workflows.DaprTestContainersConfig;
@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /*
  * This test highlights
@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(classes = { TestWorkflowsApplication.class, DaprTestContainersConfig.class,
     DaprAutoConfiguration.class }, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = { "tests.dapr.local=true" }) // this property is used to start dapr for this test
-class CompensateWhenErrorWorkflowTests {
+class AsyncTasksWorkflowTests {
 
   @Autowired
   private PaymentRequestsStore paymentRequestsStore;
@@ -72,39 +72,46 @@ class CompensateWhenErrorWorkflowTests {
   }
 
   @Test
-  void testCompensateOnErrorWorkflows() throws InterruptedException, IOException {
-
+  void testAsyncTasksWorkflows() throws InterruptedException, IOException {
     Long callsToRemoteServiceBeforeStart = ensemble.getMicrocksContainer()
             .getServiceInvocationsCount("API Payment Validator", "1.0.0");
 
-    accountService.credit("other", 100);
     accountService.credit("salaboy", 100);
 
-    PaymentRequest paymentRequest = new PaymentRequest("123", "other", 10);
+    PaymentRequest paymentRequest = new PaymentRequest("123", "salaboy", 10);
     PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)
         .body(paymentRequest)
         .when()
-        .post("/compensateonerror/start")
+        .post("/asynctasks/start")
         .then()
         .statusCode(200).extract().as(PaymentRequest.class);
 
     // Check that I have an instance id
     assertFalse(paymentRequestResult.getWorkflowInstanceId().isEmpty());
 
+    // Check that we have received a payment request
+    await().atMost(Duration.ofSeconds(10))
+            .pollDelay(500, TimeUnit.MILLISECONDS)
+            .pollInterval(500, TimeUnit.MILLISECONDS)
+            .until(() -> {
+              return paymentRequestsStore.getPaymentRequests().size() == 2;
+            });
 
-    // Checking that the debit and credit endpoints where it as part of the compensation
-    await().atMost(Duration.ofSeconds(5))
+    // Checking that retry mechanism is hitting the endpoint twice one for a 500 and
+    // then a 200
+    await().atMost(Duration.ofSeconds(20))
         .pollDelay(500, TimeUnit.MILLISECONDS)
         .pollInterval(500, TimeUnit.MILLISECONDS)
-        .until(() ->  ensemble.getMicrocksContainer()
-              .getServiceInvocationsCount("API Payment Validator", "1.0.0") - callsToRemoteServiceBeforeStart == 2);
+        .until(() ->  {
+          return (ensemble.getMicrocksContainer()
+                  .getServiceInvocationsCount("API Payment Validator", "1.0.0") - callsToRemoteServiceBeforeStart) == 2;
+        } );
 
-    // Both customer have the same balance as they started with, after compensations
+    // Customer should have a balance of 80 after two debits
     await().atMost(Duration.ofSeconds(5))
             .pollDelay(500, TimeUnit.MILLISECONDS)
             .pollInterval(500, TimeUnit.MILLISECONDS)
-            .until(() -> accountService.getCustomerBalance("salaboy") == 100 && accountService.getCustomerBalance("other") == 100);
-
+            .until(() -> accountService.getCustomerBalance("salaboy") == 80);
 
     // Check that the workflow completed successfully
     await().atMost(Duration.ofSeconds(10))
@@ -116,9 +123,15 @@ class CompensateWhenErrorWorkflowTests {
           if (instanceState == null) {
             return false;
           }
-          return instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED);
+          if (!instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED)) {
+            return false;
+          }
+          PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
+          if (paymentRequestResultFromWorkflow == null) {
+            return false;
+          }
+          return paymentRequestResultFromWorkflow.getProcessedByRemoteHttpService();
         });
-
   }
 
 }
