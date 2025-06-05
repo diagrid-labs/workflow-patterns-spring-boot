@@ -361,3 +361,56 @@ i.d.s.w.a.TaskWithAsyncLogicActivity     : PaymentRequest: 456 sent.
 
 io.dapr.workflows.WorkflowContext        : Completing the workflow async, when Activity 2 has finished 
 ```
+
+### Fire and forget
+
+In this example, the workflow executes one blocking (`await()`) activity that creates a request to an HTTP endpoint and wait for the results, followed by two async activities (notifications) that the workflow don't wait for completion. This shows how the workflow engine schedule tasks that are non-blocking. The logs shows how the workflow completes while the notification activities that, on purpouse takes 5 seconds to be executed, are sent after completion. 
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```
+http :8080/fireandforget/start id="123" customer="salaboy" amount=10
+```
+
+You should see the output similar to this: 
+```
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/json
+Date: Thu, 05 Jun 2025 08:39:06 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+
+{
+    "amount": 100,
+    "customer": "salaboy21",
+    "id": "123",
+    "processedByExternalAsyncSystem": false,
+    "processedByRemoteHttpService": false,
+    "recoveredFromTimeout": false,
+    "updatedAt": [],
+    "workflowInstanceId": "f8934335-cee6-4e52-8e37-5ee9a35b539c"
+}
+```
+
+In the application output you should see: 
+
+```bash
+io.dapr.workflows.WorkflowContext        : Workflow instance 2e24a9be-e856-47a3-b56c-2b6ba5f3dcec started
+
+... // The first activity calls a remote HTTP endpoint and wait for it response
+
+io.dapr.workflows.WorkflowContext        : Let's make a payment: 123 for customer: salaboy
+i.d.s.w.f.TaskWithSyncLogicActivity      : Payment Result: AuditPaymentPayload{paymentRequestId='123', customer='other', amount=10, message='Other customer's debit'}
+
+... // the following two notifications are scheduled in an async fashion and the workflow completes.
+
+io.dapr.workflows.WorkflowContext        : Now that the payment was processed, let's notify the Customer Success Team
+io.dapr.workflows.WorkflowContext        : Now that the payment was processed, let's notify the audit team
+io.dapr.workflows.WorkflowContext        : Completing the workflow for payment request: PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=true, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]]
+
+... // After 5 seconds both notifications will be sent
+
+>> Notification Sent: Notification{id='7a099675-510f-407a-8d88-1b519fd04df6', paymentRequest=PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=true, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]], message='Customer Payment completed successfully.'}
+>> Notification Sent: Notification{id='b3d48abb-7572-4ae8-9ab0-f3d16fa80f1b', paymentRequest=PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=true, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]], message='Customer Payment completed and ready for audit.'}
+```
