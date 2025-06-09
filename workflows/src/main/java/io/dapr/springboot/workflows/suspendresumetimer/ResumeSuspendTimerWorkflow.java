@@ -32,10 +32,15 @@ public class ResumeSuspendTimerWorkflow implements Workflow {
       ctx.getLogger().info("Workflow instance {} started", instanceId);
       PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
 
+      ctx.getLogger().info("Let's call the Log activity for payment: {}", paymentRequest.getId());
+      paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
+
       ctx.getLogger().info("Starting the timer at: {}", new Date());
       ctx.createTimer(Duration.ofSeconds(10)).await();
-
       ctx.getLogger().info("Finishing the timer at: {}", new Date());
+
+      ctx.getLogger().info("Let's call the Log activity for payment: {}", paymentRequest.getId());
+      paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
 
       ctx.getLogger().info("Let's wait for external (async) system to get back to us: {}", paymentRequest.getId());
       ctx.waitForExternalEvent("Continue", PaymentRequest.class).await();

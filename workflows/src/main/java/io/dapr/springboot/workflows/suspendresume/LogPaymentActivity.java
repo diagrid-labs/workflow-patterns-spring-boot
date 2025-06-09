@@ -22,6 +22,7 @@ public class LogPaymentActivity implements WorkflowActivity {
     PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
     logger.info("Log payment: {}", paymentRequest);
 
+    paymentRequestsStore.logPaymentTime(paymentRequest);
     paymentRequestsStore.savePaymentRequest(paymentRequest);
 
     return paymentRequest;

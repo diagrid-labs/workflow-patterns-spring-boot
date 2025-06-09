@@ -31,11 +31,13 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * This test highlights the use of suspend and resume workflow instances.
@@ -59,6 +61,7 @@ class ResumeSuspendTimerWorkflowTests {
     RestAssured.baseURI = "http://localhost:" + 8080;
     org.testcontainers.Testcontainers.exposeHostPorts(8080);
     paymentRequestsStore.getPaymentRequests().clear();
+    paymentRequestsStore.clearPaymentTimes();
   }
 
   @Test
@@ -75,6 +78,12 @@ class ResumeSuspendTimerWorkflowTests {
 
     // Check that I have an instance id
     assertFalse(paymentRequestResult.getWorkflowInstanceId().isEmpty());
+
+    // One activity was executed, hence the time of the payment must be logged
+    await().atMost(Duration.ofSeconds(3))
+            .pollDelay(500, TimeUnit.MILLISECONDS)
+            .pollInterval(500, TimeUnit.MILLISECONDS)
+            .until(() -> paymentRequestsStore.getPaymentTimes(paymentRequest.getId()).size() == 1);
 
 
     //Let's suspend the running instance
@@ -100,12 +109,14 @@ class ResumeSuspendTimerWorkflowTests {
 
             });
 
-    System.out.println("Let's wait for 20 seconds to validate the timer is not firing.");
+    System.out.println("Let's wait for 20 seconds to validate the timer is not firing. Starting at: " + new Date());
     // Let's wait for 20 seconds, to make sure that the timer is not active
     for(int i = 0 ; i < 20; i++){
       System.out.println("Waiting...");
       Thread.sleep(1000);
     }
+
+    System.out.println("Finishing wait at: " + new Date());
 
     //Let's resume the running instance
     given().contentType(ContentType.JSON)
@@ -116,38 +127,65 @@ class ResumeSuspendTimerWorkflowTests {
             .statusCode(200);
 
 
-//
-//    // wait for the workflow to be running
-//    await().atMost(Duration.ofSeconds(3))
-//            .pollDelay(500, TimeUnit.MILLISECONDS)
-//            .pollInterval(500, TimeUnit.MILLISECONDS)
-//            .until(() -> {
-//              WorkflowInstanceStatus instanceState = daprWorkflowClient
-//                      .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
-//              if(instanceState == null){
-//                return false;
-//              }
-//              return instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.RUNNING);
-//
-//            });
-//
-//    //Let's continue the workflow by sending the event that is waiting for
-//    given().contentType(ContentType.JSON)
-//            .body(paymentRequest)
-//            .when()
-//            .post("/suspendresume/continue")
-//            .then()
-//            .statusCode(200);
-//
-//
-//    // Check that we have received a payment request
-//    await().atMost(Duration.ofSeconds(5))
-//        .pollDelay(500, TimeUnit.MILLISECONDS)
-//        .pollInterval(500, TimeUnit.MILLISECONDS)
-//        .until(() -> paymentRequestsStore.getPaymentRequests().size() == 1);
+    // Two activity were executed, hence the time of the payment must be logged twice
+    await().atMost(Duration.ofSeconds(3))
+            .pollDelay(500, TimeUnit.MILLISECONDS)
+            .pollInterval(500, TimeUnit.MILLISECONDS)
+            .until(() -> {
+              for(Date d : paymentRequestsStore.getPaymentTimes(paymentRequest.getId())){
+                System.out.println("Date: " +  d);
+              }
+              return paymentRequestsStore.getPaymentTimes(paymentRequest.getId()).size() == 2;
+            });
+
 
     // wait for the workflow to be running
-    await().atMost(Duration.ofSeconds(30))
+    await().atMost(Duration.ofSeconds(3))
+            .pollDelay(500, TimeUnit.MILLISECONDS)
+            .pollInterval(500, TimeUnit.MILLISECONDS)
+            .until(() -> {
+              WorkflowInstanceStatus instanceState = daprWorkflowClient
+                      .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
+              if(instanceState == null){
+                return false;
+              }
+              return instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.RUNNING);
+
+            });
+
+    // The time between the first activity and the second (right after the timer due) should be the waiting time
+    // plus 1 or 2 seconds
+
+    List<Date> paymentTimes = paymentRequestsStore.getPaymentTimes(paymentRequest.getId());
+    assertEquals(2, paymentTimes.size());
+
+    long diffInMillies = Math.abs(paymentTimes.get(1).getTime() - paymentTimes.get(0).getTime());
+    long diff = TimeUnit.SECONDS.convert(diffInMillies, TimeUnit.MILLISECONDS);
+    System.out.println("Diff between first and second activity: " + diff);
+    assertTrue(diff > 20 && diff <= 22);
+
+    //Let's continue the workflow by sending the event that is waiting for
+    given().contentType(ContentType.JSON)
+            .body(paymentRequest)
+            .when()
+            .post("/suspendresume/continue")
+            .then()
+            .statusCode(200);
+
+
+    // Three activities were executed, hence the time of the payment must be logged thrice
+    await().atMost(Duration.ofSeconds(3))
+            .pollDelay(500, TimeUnit.MILLISECONDS)
+            .pollInterval(500, TimeUnit.MILLISECONDS)
+            .until(() -> {
+              for(Date d : paymentRequestsStore.getPaymentTimes(paymentRequest.getId())){
+                System.out.println("Date: " +  d);
+              }
+              return paymentRequestsStore.getPaymentTimes(paymentRequest.getId()).size() == 3;
+            });
+
+    // wait for the workflow to be running
+    await().atMost(Duration.ofSeconds(10))
             .pollDelay(500, TimeUnit.MILLISECONDS)
             .pollInterval(500, TimeUnit.MILLISECONDS)
             .until(() -> {

@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * This test highlights remote HTTP invocation calling with configured retries for the workflow activity.
- * It uses a Microcks Ensemble to simiulate a remote HTTP endpoint that creates one failure (returning a 500)
+ * It uses a Microcks Ensemble to simulate a remote HTTP endpoint that creates one failure (returning a 500)
  * with a subsequent success (200), testing the retry mechanism.
  */
 @SpringBootTest(classes = { TestWorkflowsApplication.class, DaprTestContainersConfig.class,
@@ -66,6 +66,8 @@ class TimeoutEventWorkflowTests {
     RestAssured.baseURI = "http://localhost:" + 8080;
     org.testcontainers.Testcontainers.exposeHostPorts(8080);
     paymentRequestsStore.getPaymentRequests().clear();
+
+
   }
 
   @Test

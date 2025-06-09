@@ -414,3 +414,82 @@ io.dapr.workflows.WorkflowContext        : Completing the workflow for payment r
 >> Notification Sent: Notification{id='7a099675-510f-407a-8d88-1b519fd04df6', paymentRequest=PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=true, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]], message='Customer Payment completed successfully.'}
 >> Notification Sent: Notification{id='b3d48abb-7572-4ae8-9ab0-f3d16fa80f1b', paymentRequest=PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=true, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]], message='Customer Payment completed and ready for audit.'}
 ```
+
+### Suspend and Resume
+
+In this example we test the suspend and resume commands for a workflow instance. To validate that the operation was successful we check on the workflow instance status.
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/suspendresume/start id="123" customer="salaboy" amount=10
+```
+
+You should see the output similar to this: 
+```sh
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/json
+Date: Mon, 09 Jun 2025 14:25:51 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+
+{
+    "amount": 10,
+    "customer": "salaboy",
+    "id": "123",
+    "processedByExternalAsyncSystem": false,
+    "processedByRemoteHttpService": false,
+    "recoveredFromTimeout": false,
+    "updatedAt": [],
+    "workflowInstanceId": "f3e669ee-ca8d-4409-a01d-cd2b55de03ad"
+}
+
+```
+
+In the application output you should see: 
+```sh
+io.dapr.workflows.WorkflowContext        : Workflow instance f3e669ee-ca8d-4409-a01d-cd2b55de03ad started
+... // The workflow instance starts and wait for an event.
+io.dapr.workflows.WorkflowContext        : Let's wait for external (async) system to get back to us: 123
+```
+
+Now, we can suspend the workflow instance by running the following command, picking up the workflowInstanceId from the previous command: 
+
+```sh
+http PATCH ':8080/suspendresume/suspend?instanceId=f3e669ee-ca8d-4409-a01d-cd2b55de03ad'
+```
+
+The application output should show: 
+
+```sh
+i.d.s.w.s.ResumeSuspendRestController    : Suspending Workflow Instance: f3e669ee-ca8d-4409-a01d-cd2b55de03ad
+```
+
+Now we can resume the workflow instance if we want to continue with the execution:
+
+```sh
+http PATCH ':8080/suspendresume/resume?instanceId=f3e669ee-ca8d-4409-a01d-cd2b55de03ad'
+```
+
+The application output should show: 
+
+```sh
+i.d.s.w.s.ResumeSuspendRestController    : Resuming Workflow Instance: f3e669ee-ca8d-4409-a01d-cd2b55de03ad
+```
+
+To finish the instance we can submit the event that the workflow instance is waiting for: 
+
+```sh
+http :8080/suspendresume/continue id="123"
+```
+
+The application's output should show that the instance was completed after the event was received: 
+
+```sh
+i.d.s.w.s.ResumeSuspendRestController    : Payment request continue requested: 123
+io.dapr.workflows.WorkflowContext        : Let's call the Log activity for payment: 123
+i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]]
+io.dapr.workflows.WorkflowContext        : Workflow completed for: 123
+```
+
