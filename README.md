@@ -606,3 +606,80 @@ io.dapr.workflows.WorkflowContext        : Let's call the Log activity for payme
 i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]]
 io.dapr.workflows.WorkflowContext        : Completing the workflow for: 123
 ```
+
+### SaveState Workflow Example
+
+This example shows how to use the Dapr KVStore API to store and retrieve the PaymentRequest object.
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/savestate/start id="123" customer="salaboy" amount=10
+```
+
+You should see in the application's output that the workflow instance completed: 
+
+```sh
+io.dapr.workflows.WorkflowContext        : Workflow instance 00d405b3-30ce-41d3-99a3-4e4b330000f2 started
+io.dapr.workflows.WorkflowContext        : Let's call the SaveStateActivity...
+i.d.s.w.savestate.SaveStateActivity      : PaymentRequest: 123 stored in KVStore: kvstore.
+io.dapr.workflows.WorkflowContext        : Let's call the GetStateActivity...
+i.d.s.w.savestate.GetStateActivity       : PaymentRequest: PaymentRequest{id='123', customer='salaboy', amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId='null', updatedAt=[], terminated=false} retrieved from State Store kvstore.
+io.dapr.workflows.WorkflowContext        : Workflow Complete for payment: 123
+```
+
+### Terminate Workflow Example
+
+This example how a workflow can be terminated by using the terminateWorkflow command. While terminating a workflow you can choose the payload used to terminate the instance.
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/terminate/start id="123" customer="salaboy" amount=10
+```
+
+
+You should see in the application's output that the workflow instance completed: 
+
+```
+io.dapr.workflows.WorkflowContext        : Workflow instance 69f27326-2d7f-437a-a1bd-98cb15da27e9 started
+io.dapr.workflows.WorkflowContext        : Let's wait for external (async) system to get back to us: 123
+```
+
+As you can see the workflow is waiting for an external event, in a RUNNING state. You can now terminate the workflow by perfoming the following request: 
+
+```sh
+http delete :8080/terminate/ id="123" customer="salaboy" amount=10
+```
+
+The output from running this command should look like this: 
+
+```sh
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/json
+Date: Wed, 11 Jun 2025 05:58:42 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+
+{
+    "amount": 10,
+    "customer": "salaboy",
+    "id": "123",
+    "processedByExternalAsyncSystem": false,
+    "processedByRemoteHttpService": false,
+    "recoveredFromTimeout": false,
+    "terminated": true,
+    "updatedAt": [],
+    "workflowInstanceId": null
+}
+
+```
+
+**Notice the `terminated` boolean set to true.**
+
+And in the output of the application you should see: 
+
+```sh
+.d.s.w.t.TerminateWorkflowRestController : Workflow Terminated Request for payment: 123
+```

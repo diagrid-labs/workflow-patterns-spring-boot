@@ -27,6 +27,7 @@ public class PaymentRequest {
   private Boolean recoveredFromTimeout = false;
   private String workflowInstanceId;
   private List<Date> updatedAt  = new ArrayList<>();
+  private Boolean terminated = false;
 
   public PaymentRequest() {
 
@@ -106,19 +107,26 @@ public class PaymentRequest {
     this.recoveredFromTimeout = recoveredFromTimeout;
   }
 
-  @Override
-  public String toString() {
-    return "PaymentRequest [id=" + id + ", customer=" + customer + ", amount=" + amount
-        + ", processedByRemoteHttpService=" + processedByRemoteHttpService + ", processedByExternalAsyncSystem="
-        + processedByExternalAsyncSystem + ", recoveredFromTimeout=" + recoveredFromTimeout + ", workflowInstanceId="
-        + workflowInstanceId + ", updatedAt=" + updatedAt + "]";
+  public Boolean getTerminated() {
+    return terminated;
   }
 
-  
+  public void setTerminated(Boolean terminated) {
+    this.terminated = terminated;
+  }
 
-  
-
-  
-
-  
+  @Override
+  public String toString() {
+    return "PaymentRequest{" +
+            "id='" + id + '\'' +
+            ", customer='" + customer + '\'' +
+            ", amount=" + amount +
+            ", processedByRemoteHttpService=" + processedByRemoteHttpService +
+            ", processedByExternalAsyncSystem=" + processedByExternalAsyncSystem +
+            ", recoveredFromTimeout=" + recoveredFromTimeout +
+            ", workflowInstanceId='" + workflowInstanceId + '\'' +
+            ", updatedAt=" + updatedAt +
+            ", terminated=" + terminated +
+            '}';
+  }
 }

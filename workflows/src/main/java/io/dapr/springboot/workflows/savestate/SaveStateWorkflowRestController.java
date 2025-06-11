@@ -11,24 +11,25 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.workflows.suspendresume;
+package io.dapr.springboot.workflows.savestate;
 
 import io.dapr.spring.workflows.config.EnableDaprWorkflows;
 import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.springboot.workflows.service.PaymentRequestsStore;
 import io.dapr.springboot.workflows.service.PaymentWorkflowsStore;
 import io.dapr.workflows.client.DaprWorkflowClient;
-import io.dapr.workflows.client.WorkflowInstanceStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @EnableDaprWorkflows
-public class ResumeSuspendRestController {
+public class SaveStateWorkflowRestController {
 
-  private final Logger logger = LoggerFactory.getLogger(ResumeSuspendRestController.class);
+  private final Logger logger = LoggerFactory.getLogger(SaveStateWorkflowRestController.class);
 
   @Autowired
   private DaprWorkflowClient daprWorkflowClient;
@@ -47,41 +48,13 @@ public class ResumeSuspendRestController {
    * @param paymentRequest to be sent to a remote http service
    * @return workflow instance id created for the payment
    */
-  @PostMapping("/suspendresume/start")
+  @PostMapping("/savestate/start")
   public PaymentRequest placePaymentRequest(@RequestBody PaymentRequest paymentRequest) {
-    String instanceId = daprWorkflowClient.scheduleNewWorkflow(ResumeSuspendWorkflow.class, paymentRequest);
+    String instanceId = daprWorkflowClient.scheduleNewWorkflow(SaveStateWorkflow.class, paymentRequest);
     paymentRequest.setWorkflowInstanceId(instanceId);
     paymentsWorkflowsStore.savePaymentWorkflow(paymentRequest, instanceId);
     return paymentRequest;
   }
-
-  @PostMapping("/suspendresume/continue")
-  public PaymentRequest continuePayment(@RequestBody PaymentRequest paymentRequest) {
-    logger.info("Payment request continue requested: {}", paymentRequest.getId());
-    String workflowIdForPayment = paymentsWorkflowsStore.getPaymentWorkflowInstanceId(paymentRequest.getId());
-
-    if (workflowIdForPayment == null || workflowIdForPayment.isEmpty()) {
-      return null;
-    } else {
-      paymentRequestsStore.savePaymentRequest(paymentRequest);
-      daprWorkflowClient.raiseEvent(workflowIdForPayment, "Continue", paymentRequest);
-      return paymentRequest;
-    }
-  }
-
-
-//  @PatchMapping("/suspendresume/suspend")
-//  public void suspendWorkflowInstance(@RequestParam("instanceId") String instanceId) {
-//    logger.info("Suspending Workflow Instance: {}", instanceId);
-//    daprWorkflowClient.suspendWorkflow(instanceId, "suspending workflow instance");
-//  }
-//
-//  @PatchMapping("/suspendresume/resume")
-//  public void resumeWorkflowInstance(@RequestParam("instanceId") String instanceId) {
-//    logger.info("Resuming Workflow Instance: {}", instanceId);
-//    daprWorkflowClient.resumeWorkflow(instanceId, "resuming workflow instance");
-//  }
-
 
 }
 
