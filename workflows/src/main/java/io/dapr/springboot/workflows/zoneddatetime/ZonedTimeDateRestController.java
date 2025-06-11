@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.workflows.suspendresumetimer;
+package io.dapr.springboot.workflows.zoneddatetime;
 
 import io.dapr.spring.workflows.config.EnableDaprWorkflows;
 import io.dapr.springboot.workflows.model.PaymentRequest;
@@ -21,15 +21,15 @@ import io.dapr.workflows.client.DaprWorkflowClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Date;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @EnableDaprWorkflows
-public class ResumeSuspendTimerRestController {
+public class ZonedTimeDateRestController {
 
-  private final Logger logger = LoggerFactory.getLogger(ResumeSuspendTimerRestController.class);
+  private final Logger logger = LoggerFactory.getLogger(ZonedTimeDateRestController.class);
 
   @Autowired
   private DaprWorkflowClient daprWorkflowClient;
@@ -48,15 +48,13 @@ public class ResumeSuspendTimerRestController {
    * @param paymentRequest to be sent to a remote http service
    * @return workflow instance id created for the payment
    */
-  @PostMapping("/suspendresume/timer/start")
+  @PostMapping("/zoneddatetime/start")
   public PaymentRequest placePaymentRequest(@RequestBody PaymentRequest paymentRequest) {
-    String instanceId = daprWorkflowClient.scheduleNewWorkflow(ResumeSuspendTimerWorkflow.class, paymentRequest);
+    String instanceId = daprWorkflowClient.scheduleNewWorkflow(ZonedTimeDateWorkflow.class, paymentRequest);
     paymentRequest.setWorkflowInstanceId(instanceId);
     paymentsWorkflowsStore.savePaymentWorkflow(paymentRequest, instanceId);
     return paymentRequest;
   }
-
-
 
 }
 

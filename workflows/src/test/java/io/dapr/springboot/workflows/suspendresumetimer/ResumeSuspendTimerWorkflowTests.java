@@ -109,9 +109,9 @@ class ResumeSuspendTimerWorkflowTests {
 
             });
 
-    System.out.println("Let's wait for 20 seconds to validate the timer is not firing. Starting at: " + new Date());
-    // Let's wait for 20 seconds, to make sure that the timer is not active
-    for(int i = 0 ; i < 20; i++){
+    System.out.println("Let's wait for 30 seconds to validate the timer is not firing. Starting at: " + new Date());
+    // Let's wait for 30 seconds, to make sure that the timer is not active
+    for(int i = 0 ; i < 30; i++){
       System.out.println("Waiting...");
       Thread.sleep(1000);
     }
@@ -162,7 +162,7 @@ class ResumeSuspendTimerWorkflowTests {
     long diffInMillies = Math.abs(paymentTimes.get(1).getTime() - paymentTimes.get(0).getTime());
     long diff = TimeUnit.SECONDS.convert(diffInMillies, TimeUnit.MILLISECONDS);
     System.out.println("Diff between first and second activity: " + diff);
-    assertTrue(diff > 20 && diff <= 22);
+    assertTrue(diff > 30 && diff <= 32);
 
     //Let's continue the workflow by sending the event that is waiting for
     given().contentType(ContentType.JSON)

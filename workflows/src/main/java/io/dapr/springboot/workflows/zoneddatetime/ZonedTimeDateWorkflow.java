@@ -11,45 +11,47 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.workflows.suspendresumetimer;
+package io.dapr.springboot.workflows.zoneddatetime;
 
 import io.dapr.springboot.workflows.model.PaymentRequest;
+import io.dapr.springboot.workflows.simpletimer.UpdatePaymentRequestActivity;
 import io.dapr.springboot.workflows.suspendresume.LogPaymentActivity;
 import io.dapr.workflows.Workflow;
 import io.dapr.workflows.WorkflowStub;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 @Component
-public class ResumeSuspendTimerWorkflow implements Workflow {
+public class ZonedTimeDateWorkflow implements Workflow {
 
   @Override
   public WorkflowStub create() {
     return ctx -> {
       String instanceId = ctx.getInstanceId();
-      ctx.getLogger().info("Workflow instance {} started", instanceId);
+      ctx.getLogger().info("Workflow instance " + instanceId + " started");
       PaymentRequest paymentRequest = ctx.getInput(PaymentRequest.class);
 
       ctx.getLogger().info("Let's call the Log activity for payment: {}", paymentRequest.getId());
-      paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
+      paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest,
+        PaymentRequest.class).await();
 
+      ZonedDateTime now = ZonedDateTime.now();
+      //Let's create a ZonedDateTime 10 seconds in the future
+      ZonedDateTime inTheFuture = now.plusSeconds(10);
       ctx.getLogger().info("Starting the timer at: {}", new Date());
-      ctx.createTimer(Duration.ofSeconds(20)).await();
+      ctx.createTimer(inTheFuture).await();
       ctx.getLogger().info("Finishing the timer at: {}", new Date());
 
-      ctx.getLogger().info("Let's call the Log activity for payment: {}", paymentRequest.getId());
-      paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
-
-      ctx.getLogger().info("Let's wait for external (async) system to get back to us: {}", paymentRequest.getId());
-      ctx.waitForExternalEvent("Continue", PaymentRequest.class).await();
 
       ctx.getLogger().info("Let's call the Log activity for payment: {}", paymentRequest.getId());
-      paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest, PaymentRequest.class).await();
+      paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest,
+        PaymentRequest.class).await();
 
-      ctx.getLogger().info("Workflow completed for: {}", paymentRequest.getId());
       ctx.complete(paymentRequest);
+      ctx.getLogger().info("Completing the workflow for: {}", paymentRequest.getId());
     };
   }
 }

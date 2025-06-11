@@ -73,13 +73,13 @@ public class ResumeSuspendRestController {
   @PatchMapping("/suspendresume/suspend")
   public void suspendWorkflowInstance(@RequestParam("instanceId") String instanceId) {
     logger.info("Suspending Workflow Instance: {}", instanceId);
-    daprWorkflowClient.suspendWorkflow(instanceId, "");
+    daprWorkflowClient.suspendWorkflow(instanceId, "suspending workflow instance");
   }
 
   @PatchMapping("/suspendresume/resume")
   public void resumeWorkflowInstance(@RequestParam("instanceId") String instanceId) {
     logger.info("Resuming Workflow Instance: {}", instanceId);
-    daprWorkflowClient.resumeWorkflow(instanceId, "");
+    daprWorkflowClient.resumeWorkflow(instanceId, "resuming workflow instance");
   }
 
 
