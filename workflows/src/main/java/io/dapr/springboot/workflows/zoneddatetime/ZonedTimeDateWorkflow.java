@@ -20,8 +20,7 @@ import io.dapr.workflows.Workflow;
 import io.dapr.workflows.WorkflowStub;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.Date;
 
 @Component
@@ -38,13 +37,15 @@ public class ZonedTimeDateWorkflow implements Workflow {
       paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest,
         PaymentRequest.class).await();
 
+      //ZonedDateTime
+      //Creating fixed dates
+      //Example: ZonedDateTime.of(LocalDate.of(2025, 1, 1), LocalTime.of(3, 0, 0), ZoneId.of("PST"))
       ZonedDateTime now = ZonedDateTime.now();
       //Let's create a ZonedDateTime 10 seconds in the future
       ZonedDateTime inTheFuture = now.plusSeconds(10);
-      ctx.getLogger().info("Starting the timer at: {}", new Date());
+      ctx.getLogger().info("Creating a timer that due at: {}", inTheFuture);
       ctx.createTimer(inTheFuture).await();
-      ctx.getLogger().info("Finishing the timer at: {}", new Date());
-
+      ctx.getLogger().info("The timer fired at: {}", ZonedDateTime.now());
 
       ctx.getLogger().info("Let's call the Log activity for payment: {}", paymentRequest.getId());
       paymentRequest = ctx.callActivity(LogPaymentActivity.class.getName(), paymentRequest,

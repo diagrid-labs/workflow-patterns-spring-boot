@@ -417,7 +417,7 @@ io.dapr.workflows.WorkflowContext        : Completing the workflow for payment r
 
 ### Suspend and Resume
 
-In this example we test the suspend and resume commands for a workflow instance. To validate that the operation was successful we check on the workflow instance status.
+In this example we test the suspend and resume commands for a workflow instance. To validate that the the operations were successful we check on the workflow instance status.
 
 Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
 
@@ -493,3 +493,116 @@ i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, 
 io.dapr.workflows.WorkflowContext        : Workflow completed for: 123
 ```
 
+### Suspend and Resume with Timer
+
+In this example we test the suspend and resume commands for a workflow instance that creates a timer. We suspend the instance after the timer is created, wait for the timer deadline and then resume. The timer is fired instantly if the timer due date was met when the instance was suspended.
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/suspendresume/timer/start id="123" customer="salaboy" amount=10
+```
+
+You should see the output similar to this: 
+
+```sh
+{
+    "amount": 10,
+    "customer": "salaboy",
+    "id": "123",
+    "processedByExternalAsyncSystem": false,
+    "processedByRemoteHttpService": false,
+    "recoveredFromTimeout": false,
+    "updatedAt": [],
+    "workflowInstanceId": "b07e6e95-0d19-4e16-82b3-5b6566fe77c0"
+}
+
+```
+
+The application's output log should show something like this: 
+```
+io.dapr.workflows.WorkflowContext        : Workflow instance b07e6e95-0d19-4e16-82b3-5b6566fe77c0 started
+io.dapr.workflows.WorkflowContext        : Let's call the Log activity for payment: 123
+i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]]
+io.dapr.workflows.WorkflowContext        : Starting the timer at: Tue Jun 10 08:35:55 HKT 2025
+
+```
+
+Before the 30 seconds timer is due, let's suspend the workflow instance using the `workflowInstanceId` provided by the first command output.
+
+```sh
+http PATCH ':8080/suspendresume/suspend?instanceId=b07e6e95-0d19-4e16-82b3-5b6566fe77c0'
+```
+
+You should see in the output: 
+```sh
+i.d.s.w.s.ResumeSuspendRestController    : Suspending Workflow Instance: b07e6e95-0d19-4e16-82b3-5b6566fe77c0
+```
+
+Make sure that in the output, doesn't show that the timer has finished. 
+Wait for 30 seconds or more and then resume the instance.
+
+
+```sh
+http PATCH ':8080/suspendresume/resume?instanceId=b07e6e95-0d19-4e16-82b3-5b6566fe77c0'
+```
+
+You should see that the workflow instance was resumed and that the timer was fired inmediately.
+
+The application's output should show something like this: 
+
+```sh
+i.d.s.w.s.ResumeSuspendRestController    : Resuming Workflow Instance: b07e6e95-0d19-4e16-82b3-5b6566fe77c0
+io.dapr.workflows.WorkflowContext        : Finishing the timer at: Tue Jun 10 08:40:03 HKT 2025
+io.dapr.workflows.WorkflowContext        : Let's call the Log activity for payment: 123
+i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]]
+io.dapr.workflows.WorkflowContext        : Let's wait for external (async) system to get back to us: 123
+```
+
+To complete the instance, let's send the event that it is waiting for: 
+
+```sh
+http :8080/suspendresume/continue id="123"
+```
+
+You should see in the application's output that the workflow instance completed: 
+
+```
+i.d.s.w.s.ResumeSuspendRestController    : Payment request continue requested: 123
+io.dapr.workflows.WorkflowContext        : Let's call the Log activity for payment: 123
+i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]]
+io.dapr.workflows.WorkflowContext        : Workflow completed for: 123
+```
+
+
+### ZoneDateTime Timer Example
+
+This example shows how to schedule timers for future [ZonedDateTimes](https://docs.oracle.com/javase/8/docs/api/java/time/ZonedDateTime.html), this allows timers to fire on a specific date/time that is specific to a Timezone.  
+
+The example shows how a timer can be scheduled to due at a fixed time in the future. 
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/zoneddatetime/start id="123" customer="salaboy" amount=10
+```
+
+You should see in the application's output that the workflow instance completed: 
+
+```
+io.dapr.workflows.WorkflowContext        : Workflow instance a1d3a3ba-2527-4b5b-88c1-3ca1d14022f0 started
+io.dapr.workflows.WorkflowContext        : Let's call the Log activity for payment: 123
+i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]]
+... // Creates a timer for 10 seconds in the future, this includes rounding milliseconds
+io.dapr.workflows.WorkflowContext        : Creating a timer that due at: 2025-06-11T11:19:58.954097+08:00[Asia/Hong_Kong]
+
+... // The timer will wait until the specified time to fire
+
+io.dapr.workflows.WorkflowContext        : The timer fired at: Wed Jun 11 11:19:57 HKT 2025
+
+... // The timer fires approx 10 seconds in the future, as there is some rounding included the seconds might not match exactly
+
+io.dapr.workflows.WorkflowContext        : Let's call the Log activity for payment: 123
+i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]]
+io.dapr.workflows.WorkflowContext        : Completing the workflow for: 123
+```
