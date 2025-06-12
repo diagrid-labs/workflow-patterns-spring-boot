@@ -20,18 +20,18 @@ tests.dapr.local=true
 
 The `workflows` Maven project contains different workflow patterns showing also some integration patterns and Dapr workflow features. 
 
-- Simple HTTP endpoint with Activity Retry Policies Example (`simplehttp`)
-- Async Kafka producer and consumer Example (`asynckafka`)
-- Async PubSub producer and consumer Example (`asyncpubsub`)
-- Simple Timer Example (`simpletimer`)
-- Compensate On Error Example (`compensanteonerror`)
-- Async Tasks Example (`asynctasks`)
-- Fire and forget Example (`fireandforget`)
-- Suspend and Resume Example (`suspendresume`)
-- Suspend and Resume with Timer Example (`suspendresumetimer`)
-- ZoneDateTime Timer Example (`zoneddatetime`)
-- SaveState Workflow Example (`savestate`)
-- Terminate Workflow Example (`terminate`)
+- [Simple HTTP endpoint with Activity Retry Policies Example](#simple-http-with-retry-policies-example) (`simplehttp`)
+- [Async Kafka producer and consumer Example](#async-kafka-producer-and-consumer-example) (`asynckafka`)
+- [Async PubSub producer and consumer Example](#async-pubsub-producer-and-consumer-example) (`asyncpubsub`)
+- [Simple Timer Example](#simple-timer-example) (`simpletimer`)
+- [Compensate On Error Example](#compensate-on-error-example) (`compensanteonerror`)
+- [Async Tasks Example](#async-tasks-example) (`asynctasks`)
+- [Fire and forget Example](#fire-and-forget-example) (`fireandforget`)
+- [Suspend and Resume Example](#suspend-and-resume-example) (`suspendresume`)
+- [Suspend and Resume with Timer Example](#suspend-and-resume-with-timer-example) (`suspendresumetimer`)
+- [ZoneDateTime Timer Example](#zonedatetime-timer-example) (`zoneddatetime`)
+- [SaveState Workflow Example](#savestate-workflow-example) (`savestate`)
+- [Terminate Workflow Example](#terminate-workflow-example) (`terminate`)
 
 ### Simple HTTP with retry policies Example
 
