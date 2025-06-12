@@ -20,15 +20,20 @@ tests.dapr.local=true
 
 The `workflows` Maven project contains different workflow patterns showing also some integration patterns and Dapr workflow features. 
 
-- Simple HTTP endpoint with Activity Retry Policies (`simplehttp`)
-- Async Kafka producer and consumer  (`asynckafka`)
-- Async PubSub producer and consumer (`asyncpubsub`)
-- Simple Timer (`simpletimer`)
-- Compensate On Error (`compensanteonerror`)
-- Async Tasks (`asynctasks`)
+- Simple HTTP endpoint with Activity Retry Policies Example (`simplehttp`)
+- Async Kafka producer and consumer Example (`asynckafka`)
+- Async PubSub producer and consumer Example (`asyncpubsub`)
+- Simple Timer Example (`simpletimer`)
+- Compensate On Error Example (`compensanteonerror`)
+- Async Tasks Example (`asynctasks`)
+- Fire and forget Example (`fireandforget`)
+- Suspend and Resume Example (`suspendresume`)
+- Suspend and Resume with Timer Example (`suspendresumetimer`)
+- ZoneDateTime Timer Example (`zoneddatetime`)
+- SaveState Workflow Example (`savestate`)
+- Terminate Workflow Example (`terminate`)
 
-
-### Simple HTTP with retry policies
+### Simple HTTP with retry policies Example
 
 This example shows a workflow with a single activity that performs a remote HTTP endpoint call. This activity is configured to retry if the HTTP endpoint call fails. 
 
@@ -64,7 +69,7 @@ io.dapr.workflows.WorkflowContext        : Payment request: PaymentRequest{id='1
 The important bit of information here is the `processedByRemoteHttpService=true` property that is set by the activity that calls the remote HTTP endpoint after obtaining a result from the endpoint.
 
 
-### Async Kafka producer and consumer
+### Async Kafka producer and consumer Example
 
 This workflow consist on an activity that produce a Kafka message into a Kafka topic and a WaitForExternal event activity. 
 
@@ -90,7 +95,7 @@ io.dapr.workflows.WorkflowContext        : Let's wait for external (async) syste
 io.dapr.workflows.WorkflowContext        : Payment was processed and event arrived: 123
 ```
 
-### Async PubSub producer and consumer
+### Async PubSub producer and consumer Example
 
 This workflow consist on an activity that produce a message using the Dapr PubSub API and a WaitForExternal event activity. 
 
@@ -147,7 +152,7 @@ io.dapr.workflows.WorkflowContext        : Payment was processed and event arriv
 
 ```
 
-### Simple Timer
+### Simple Timer Example
 
 This workflow shows how a timer can be used to wait for a consistent amount of time before moving to the next workflow activity. 
 The workflow consist of three steps: 
@@ -202,7 +207,7 @@ io.dapr.workflows.WorkflowContext        : Payment request: PaymentRequest [id=1
 
 If you inspect the output, you will see that the second time that the activity is executed happens 10 seconds after the first execution. Check the timestamps: `updatedAt=[Thu May 29 10:14:46 WEST 2025, Thu May 29 10:14:56 WEST 2025]]`
 
-### Event Timeout Workflow
+### Event Timeout Workflow Example
 
 This workflow shows how to deal with waitForExternalEvent timeouts. This example shows how to execute an activity if the 
 duration specified for waiting an event times out. If the time out happens, for this example a new activity is called.
@@ -247,7 +252,7 @@ i.d.s.w.t.HandleTimeoutActivity          : Handling timeout for payment: 123
 io.dapr.workflows.WorkflowContext        : Workflow completed for: 123
 ```
 
-### Compensate on Error
+### Compensate on Error Example
 
 This example shows how to use the CompensationHelper to register compensation activities that can be associated to workflow activities. 
 Compensation activities should include the logic to define how the compensation should be performed, this can be by checking that previous operations were performed and then implement how to perform the compensation. 
@@ -298,7 +303,7 @@ CompensationCreditPaymentRequestActivity : Credit Payment Result: AuditPaymentPa
 CompensationCreditPaymentRequestActivity : Credit PaymentRequest: 123 sent.
 ```
 
-### Async Tasks
+### Async Tasks Example
 
 This example shows how to use Async Tasks with Dapr Workflows. By default all Tasks are async and handled by [Project Reactor](https://projectreactor.io/) in a separate thread. Tasks are scheduled when the ctx.callActivity() method is used and the workflow developer can choose to wait for the task to complete by blocking the workflow thread or to rely on the async nature of tasks and register a callback for when the tasks is completed.
 
@@ -362,7 +367,7 @@ i.d.s.w.a.TaskWithAsyncLogicActivity     : PaymentRequest: 456 sent.
 io.dapr.workflows.WorkflowContext        : Completing the workflow async, when Activity 2 has finished 
 ```
 
-### Fire and forget
+### Fire and forget Example
 
 In this example, the workflow executes one blocking (`await()`) activity that creates a request to an HTTP endpoint and wait for the results, followed by two async activities (notifications) that the workflow don't wait for completion. This shows how the workflow engine schedule tasks that are non-blocking. The logs shows how the workflow completes while the notification activities that, on purpouse takes 5 seconds to be executed, are sent after completion. 
 
@@ -415,7 +420,7 @@ io.dapr.workflows.WorkflowContext        : Completing the workflow for payment r
 >> Notification Sent: Notification{id='b3d48abb-7572-4ae8-9ab0-f3d16fa80f1b', paymentRequest=PaymentRequest [id=123, customer=salaboy, amount=10, processedByRemoteHttpService=true, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId=null, updatedAt=[]], message='Customer Payment completed and ready for audit.'}
 ```
 
-### Suspend and Resume
+### Suspend and Resume Example
 
 In this example we test the suspend and resume commands for a workflow instance. To validate that the the operations were successful we check on the workflow instance status.
 
@@ -493,7 +498,7 @@ i.d.s.w.s.LogPaymentActivity             : Log payment: PaymentRequest [id=123, 
 io.dapr.workflows.WorkflowContext        : Workflow completed for: 123
 ```
 
-### Suspend and Resume with Timer
+### Suspend and Resume with Timer Example
 
 In this example we test the suspend and resume commands for a workflow instance that creates a timer. We suspend the instance after the timer is created, wait for the timer deadline and then resume. The timer is fired instantly if the timer due date was met when the instance was suspended.
 
