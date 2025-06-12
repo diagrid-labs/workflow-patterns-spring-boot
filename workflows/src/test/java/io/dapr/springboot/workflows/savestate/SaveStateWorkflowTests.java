@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.springboot.workflows.timeoutevent;
+package io.dapr.springboot.workflows.savestate;
 
 import io.dapr.springboot.DaprAutoConfiguration;
 import io.dapr.springboot.workflows.DaprTestContainersConfig;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /*
  * This test highlights remote HTTP invocation calling with configured retries for the workflow activity.
@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(classes = { TestWorkflowsApplication.class, DaprTestContainersConfig.class,
     DaprAutoConfiguration.class }, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = { "tests.dapr.local=true" }) // this property is used to start dapr for this test
-class TimeoutEventWorkflowTests {
+class SaveStateWorkflowTests {
 
   @Autowired
   private PaymentRequestsStore paymentRequestsStore;
@@ -66,18 +66,17 @@ class TimeoutEventWorkflowTests {
     RestAssured.baseURI = "http://localhost:" + 8080;
     org.testcontainers.Testcontainers.exposeHostPorts(8080);
     paymentRequestsStore.getPaymentRequests().clear();
-
-
   }
 
   @Test
-  void testTimeoutEventWorkflows() throws InterruptedException, IOException {
+  void testSaveStateWorkflow() throws InterruptedException, IOException {
+
 
     PaymentRequest paymentRequest = new PaymentRequest("123", "salaboy", 10);
     PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)
         .body(paymentRequest)
         .when()
-        .post("/timeoutevent/start")
+        .post("/savestate/start")
         .then()
         .statusCode(200).extract().as(PaymentRequest.class);
 
@@ -85,94 +84,26 @@ class TimeoutEventWorkflowTests {
     assertFalse(paymentRequestResult.getWorkflowInstanceId().isEmpty());
 
     // Check that we have received a payment request
-    await().atMost(Duration.ofSeconds(10))
-        .pollDelay(500, TimeUnit.MILLISECONDS)
-        .pollInterval(500, TimeUnit.MILLISECONDS)
-        .until(() -> {
-          if (paymentRequestsStore.getPaymentRequests().size() == 1) {
-            PaymentRequest paymentRequestFromStore = paymentRequestsStore.getPaymentRequests()
-                .iterator().next();
-            System.out.println(paymentRequestFromStore);
-            return paymentRequestFromStore.getRecoveredFromTimeout();
-          }
-          return false;
-        });
-
-    // Check that the workflow completed successfully
-    await().atMost(Duration.ofSeconds(10))
-        .pollDelay(500, TimeUnit.MILLISECONDS)
-        .pollInterval(500, TimeUnit.MILLISECONDS)
-        .until(() -> {
-          WorkflowInstanceStatus instanceState = daprWorkflowClient
-                .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
-            if(instanceState == null){
-              return false;
-            }
-            if(!instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED)){
-              return false;
-            }
-            PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
-            if(paymentRequestResultFromWorkflow == null){
-              return false;
-            }
-            
-            return paymentRequestResultFromWorkflow.getRecoveredFromTimeout();
-        });
-
-  }
-
-  @Test
-  void testNotTimeoutEventWorkflows() throws InterruptedException, IOException {
-
-    PaymentRequest paymentRequest = new PaymentRequest("456", "salaboy", 10);
-    PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)
-        .body(paymentRequest)
-        .when()
-        .post("/timeoutevent/start")
-        .then()
-        .statusCode(200).extract().as(PaymentRequest.class);
-
-    // Check that I have an instance id
-    assertFalse(paymentRequestResult.getWorkflowInstanceId().isEmpty());
-
-    given().contentType(ContentType.JSON)
-        .body(paymentRequest)
-        .when()
-        .post("/timeoutevent/continue")
-        .then()
-        .statusCode(200);
-
-    // Check that we have received a payment request
-    await().atMost(Duration.ofSeconds(7))
+    await().atMost(Duration.ofSeconds(5))
         .pollDelay(500, TimeUnit.MILLISECONDS)
         .pollInterval(500, TimeUnit.MILLISECONDS)
         .until(() -> {
           return paymentRequestsStore.getPaymentRequests().size() == 1;
         });
 
-    assertNotNull(paymentRequestResult.getWorkflowInstanceId());
-
     // Check that the workflow completed successfully
-    await().atMost(Duration.ofSeconds(10))
+    await().atMost(Duration.ofSeconds(5))
         .pollDelay(500, TimeUnit.MILLISECONDS)
         .pollInterval(500, TimeUnit.MILLISECONDS)
         .until(() -> {
-            WorkflowInstanceStatus instanceState = daprWorkflowClient
-                .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
-            if(instanceState == null){
-              return false;
-            }
-            if(!instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED)){
-              return false;
-            }
-            PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
-            if(paymentRequestResultFromWorkflow == null){
-              return false;
-            }
-            
-            return true; // The workflow completed without modifying the payload
-        });
+          WorkflowInstanceStatus instanceState = daprWorkflowClient
+              .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
+          if (instanceState == null) {
+            return false;
+          }
+          return instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED);
 
+        });
   }
 
 }
