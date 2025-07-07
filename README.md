@@ -688,3 +688,54 @@ And in the output of the application you should see:
 ```sh
 .d.s.w.t.TerminateWorkflowRestController : Workflow Terminated Request for payment: 123
 ```
+
+### Raise multiple events that are not being waited on
+
+This example shows how Dapr workflows deal with events that are currently not being waited on. This example consist of a workflow that waits sequentially on two events Event1 and Event2. The test implements the following sequence: 
+
+1) Start Workflow. The Workflow instance waits on Event1
+2) Raise 100 "Events2" and verify that the Worflow Instance is still running
+3) Raise "Event1" and verify that the workflow instance completed, as the first "Event2" that was previously raised for the instance is picked up. 
+
+You can also interact manually with the endpoints by sending the following requests: 
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/raisemultievent/start id="123" customer="salaboy" amount=10
+```
+
+To emit "Event2" you can run: 
+
+```
+http :8080/raisemultievent/continue-2 id="123" customer="salaboy" amount=10
+```
+
+If you look at the application output you will see the following messages: 
+
+```
+io.dapr.workflows.WorkflowContext        : Workflow instance 2d6f68bf-8f59-48d5-958f-d47ad94cc20f started
+io.dapr.workflows.WorkflowContext        : Let's wait for external event: EVENT1
+
+... If you send "Event2" you will see the log, but the workflow is not moving forward
+i.d.s.w.r.RaiseMultiEventsRestController : Payment request approval requested: 123
+i.d.s.w.r.RaiseMultiEventsRestController : Payment request approval requested: 123
+
+```
+
+You can send multiple "Event2" requests. 
+
+Now when you send "Event1", the workflow should complete by moving forward and and consuming the first "Event2" event that was previously sent. 
+
+```
+http :8080/raisemultievent/continue-1 id="123" customer="salaboy" amount=10
+```
+
+You should see in the output, completing the workflow: 
+
+```
+ io.dapr.workflows.WorkflowContext        : EVENT1 received!PaymentRequest{id='123', customer='salaboy', amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=true, recoveredFromTimeout=false, workflowInstanceId='null', updatedAt=[], terminated=false}
+io.dapr.workflows.WorkflowContext        : Let's wait for external event: EVENT2 
+io.dapr.workflows.WorkflowContext        : EVENT2 received!PaymentRequest{id='123', customer='salaboy', amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=true, recoveredFromTimeout=false, workflowInstanceId='null', updatedAt=[], terminated=false}
+
+```

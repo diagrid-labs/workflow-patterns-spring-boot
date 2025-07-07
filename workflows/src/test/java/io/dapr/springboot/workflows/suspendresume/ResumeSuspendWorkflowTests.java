@@ -13,6 +13,7 @@ limitations under the License.
 
 package io.dapr.springboot.workflows.suspendresume;
 
+import io.dapr.client.DaprClient;
 import io.dapr.springboot.DaprAutoConfiguration;
 import io.dapr.springboot.workflows.DaprTestContainersConfig;
 import io.dapr.springboot.workflows.TestWorkflowsApplication;
@@ -66,7 +67,6 @@ class ResumeSuspendWorkflowTests {
 
   @Test
   void testSuspendResumeStatesWorkflows() throws InterruptedException, IOException {
-
     PaymentRequest paymentRequest = new PaymentRequest("123", "salaboy", 10);
 
     PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)

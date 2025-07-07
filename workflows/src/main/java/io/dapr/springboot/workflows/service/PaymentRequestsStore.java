@@ -25,8 +25,18 @@ public class PaymentRequestsStore {
 
   private final Map<String, List<Date>> paymentTimes = new ConcurrentHashMap<>();
 
+  private final List<PaymentRequest> log = new ArrayList<>();
+
   public void savePaymentRequest(PaymentRequest paymentRequest) {
     paymentRequests.put(paymentRequest.getId(), paymentRequest);
+  }
+
+  public void logPayment(PaymentRequest paymentRequest){
+    log.add(paymentRequest);
+  }
+
+  public List<PaymentRequest> getLoggedPayments(){
+    return log;
   }
 
   public void logPaymentTime(PaymentRequest paymentRequest){
