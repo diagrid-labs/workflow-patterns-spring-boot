@@ -16,6 +16,15 @@ mvn spring-boot:test-run
 tests.dapr.local=true
 ```
 
+You can set your Catalyst ENV Variables or set the following Spring Boot Application properties: 
+
+In your `application.properties` file: 
+```
+dapr.client.httpEndpoint=<Your Catalyst Project HTTP Endpoint>
+dapr.client.grpcEndpoint=<Your Catalyst Project GRPC Endpoint>
+dapr.client.apiToken=<Your Catalyst APP ID API Token>
+```
+
 ## Patterns
 
 The `workflows` Maven project contains different workflow patterns showing also some integration patterns and Dapr workflow features. 
@@ -739,3 +748,73 @@ io.dapr.workflows.WorkflowContext        : Let's wait for external event: EVENT2
 io.dapr.workflows.WorkflowContext        : EVENT2 received!PaymentRequest{id='123', customer='salaboy', amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=true, recoveredFromTimeout=false, workflowInstanceId='null', updatedAt=[], terminated=false}
 
 ```
+
+
+### Recording operations with Micrometer
+
+This example shows how to record the time of execution of different parts of the workflow. This example uses [micrometer](https://micrometer.io/) to record the execution time of `scheduleNewWorkflow`, `callActivity`, the logic executed inside an Activity and the total workflow execution time. The Workflow definition call two activities, where the second one introduces a 100ms delay that is reflected in the metrics.
+
+You can check the following endpoints to fetch the metrics for this example:
+
+- `/actuator/metrics/total.workflow` : total workflow execution stats. To the max time you need to substract 100ms that are added intentionally on the second activity.
+- `/actuator/metrics/callActivity1.workflow`: callActivity1 time recorded from the workflow definition. If you substract `activity.store-payment-request` metrics, you get the time spent in doing the call to the workflow engine.
+- `/actuator/metrics/callActivity2.workflow`: callActivity2 time recorded from the workflow definition. If you substract `activity.slow-activity` metrics, you get the time spent in doing the call to the workflow engine.
+- `/actuator/metrics/activity.store-payment-request`: Internal exeuction of the activity logic.
+- `/actuator/metrics/activity.slow-activity`: Internal exeuction of the activity logic, this adds 100ms delay.
+
+Micrometer uses the Spring Boot Actuators to expose the metrics that can be scraped by a Prometheus collector. 
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/performance/start id="123" customer="salaboy" amount=10
+```
+
+You can send multiple requests to start multiple instances and you should see something like this on the application output: 
+
+```
+io.dapr.workflows.WorkflowContext        : Workflow instance 5cf2aa1e-eb6c-4724-88ee-0d7e025723a4 started
+io.dapr.workflows.WorkflowContext        : Payment request: PaymentRequest{id='123', customer='salaboy', amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId='null', updatedAt=[], terminated=false} stored.
+io.dapr.workflows.WorkflowContext        : Workflow Completed for Payment: PaymentRequest{id='123', customer='salaboy', amount=10, processedByRemoteHttpService=false, processedByExternalAsyncSystem=false, recoveredFromTimeout=false, workflowInstanceId='null', updatedAt=[], terminated=false}.
+```
+
+Now to look at the metrics you can send requests to the metrics actuator: 
+
+```sh
+http :8080/actuator/metrics/total.workflow
+```
+
+You should see an output like this: 
+
+```
+{
+    "availableTags": [
+        {
+            "tag": "workflow",
+            "values": [
+                "end-to-end"
+            ]
+        }
+    ],
+    "baseUnit": "seconds",
+    "description": "Time total workflow execution",
+    "measurements": [
+        {
+            "statistic": "COUNT",
+            "value": 1.0
+        },
+        {
+            "statistic": "TOTAL_TIME",
+            "value": 0.006508
+        },
+        {
+            "statistic": "MAX",
+            "value": 0.006508
+        }
+    ],
+    "name": "total.workflow"
+}
+
+```
+
+Similarly, you can call the other endpoints listed above for other metrics.

@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.5</version>
+    <version>3.4.6</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
 
@@ -17,7 +17,7 @@
 
   <properties>
 <!--     <dapr.version>0.16.0-SNAPSHOT</dapr.version>-->
-    <dapr.version>0.15.0-rc-7</dapr.version>
+    <dapr.version>0.15.0-rc-8</dapr.version>
   </properties>
 
   <dependencies>

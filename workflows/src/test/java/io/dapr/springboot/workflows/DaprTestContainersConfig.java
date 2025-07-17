@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@TestConfiguration(proxyBeanMethods = false)
+@TestConfiguration()
 public class DaprTestContainersConfig {
 
   @Bean
@@ -86,7 +86,8 @@ public class DaprTestContainersConfig {
 
   @Bean
   MicrocksContainersEnsemble microcksEnsemble(Network network) {
-    MicrocksContainersEnsemble ensemble = new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.11.2")
+    DockerImageName myImage = DockerImageName.parse("quay.io/microcks/microcks-uber:1.11.2");
+    MicrocksContainersEnsemble ensemble = new MicrocksContainersEnsemble(network, myImage)
             .withAccessToHost(true)   // We need this to access our webapp while it runs
             .withMainArtifacts("third-parties/remote-http-service.yaml");
     return ensemble;
@@ -111,9 +112,22 @@ public class DaprTestContainersConfig {
     kafkaProperties.put("brokers", "kafka:19092");
     kafkaProperties.put("authType", "none");
 
-    return new DaprContainer("daprio/daprd:1.15.4")
+
+//    * If you want to use custom images you can do so like this:
+//    DockerImageName myDaprImage = DockerImageName.parse("salaboy/daprd:1.15.4")
+//            .asCompatibleSubstituteFor("daprio/daprd:1.15.4");
+//    DockerImageName myDaprPlacementImage = DockerImageName.parse("salaboy/placement:1.15.4")
+//            .asCompatibleSubstituteFor("daprio/placement:1.15.4");
+//    DockerImageName myDaprSchedulerImage = DockerImageName.parse("salaboy/scheduler:1.15.4")
+//            .asCompatibleSubstituteFor("daprio/scheduler:1.15.4");
+
+DockerImageName myDaprImage = DockerImageName.parse("daprio/daprd:1.15.4");
+    return new DaprContainer(myDaprImage)
             .withAppName("workflows")
             .withNetwork(daprNetwork)
+// You need to set the Placement and Scheduler image if you want to use custom registries
+//            .withPlacementImage(myDaprPlacementImage)
+//            .withSchedulerImage(myDaprSchedulerImage)
             .withComponent(new Component("kvstore", "state.in-memory", "v1",
                     Collections.singletonMap("actorStateStore", "true")))
             .withComponent(new Component("pubsub", "pubsub.kafka", "v1", kafkaProperties))
