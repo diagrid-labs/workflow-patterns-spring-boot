@@ -82,6 +82,7 @@ public class DaprTestContainersConfig {
   }
 
   @Bean
+  @ConditionalOnProperty(prefix = "tests", name = "dapr.local", havingValue = "true")
   GenericContainer zipkinContainer(Network network) {
     GenericContainer zipkinContainer = new GenericContainer(DockerImageName.parse("openzipkin/zipkin:latest"))
             .withNetwork(network)
