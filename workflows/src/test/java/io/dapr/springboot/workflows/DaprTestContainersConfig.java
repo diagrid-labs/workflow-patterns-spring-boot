@@ -13,10 +13,7 @@ limitations under the License.
 
 package io.dapr.springboot.workflows;
 
-import io.dapr.testcontainers.Component;
-import io.dapr.testcontainers.DaprContainer;
-import io.dapr.testcontainers.DaprLogLevel;
-import io.dapr.testcontainers.Subscription;
+import io.dapr.testcontainers.*;
 import io.github.microcks.testcontainers.MicrocksContainersEnsemble;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -27,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -83,6 +81,17 @@ public class DaprTestContainersConfig {
     return kafkaContainer;
   }
 
+  @Bean
+  GenericContainer zipkinContainer(Network network) {
+    GenericContainer zipkinContainer = new GenericContainer(DockerImageName.parse("openzipkin/zipkin:latest"))
+            .withNetwork(network)
+            .withExposedPorts(9411)
+            .withNetworkAliases("zipkin");
+
+    return zipkinContainer;
+  }
+
+
 
   @Bean
   MicrocksContainersEnsemble microcksEnsemble(Network network) {
@@ -106,7 +115,8 @@ public class DaprTestContainersConfig {
   @Bean
   @ServiceConnection
   @ConditionalOnProperty(prefix = "tests", name = "dapr.local", havingValue = "true")
-  public DaprContainer daprContainer(Network daprNetwork, KafkaContainer kafkaContainer) {
+  public DaprContainer daprContainer(Network daprNetwork, KafkaContainer kafkaContainer,
+                                     GenericContainer zipkinContainer) {
 
     Map<String, String> kafkaProperties = new HashMap<>();
     kafkaProperties.put("brokers", "kafka:19092");
@@ -121,7 +131,8 @@ public class DaprTestContainersConfig {
 //    DockerImageName myDaprSchedulerImage = DockerImageName.parse("salaboy/scheduler:1.15.4")
 //            .asCompatibleSubstituteFor("daprio/scheduler:1.15.4");
 
-DockerImageName myDaprImage = DockerImageName.parse("daprio/daprd:1.15.4");
+
+    DockerImageName myDaprImage = DockerImageName.parse("daprio/daprd:1.15.4");
     return new DaprContainer(myDaprImage)
             .withAppName("workflows")
             .withNetwork(daprNetwork)
@@ -131,6 +142,9 @@ DockerImageName myDaprImage = DockerImageName.parse("daprio/daprd:1.15.4");
             .withComponent(new Component("kvstore", "state.in-memory", "v1",
                     Collections.singletonMap("actorStateStore", "true")))
             .withComponent(new Component("pubsub", "pubsub.kafka", "v1", kafkaProperties))
+            .withConfiguration(new Configuration("daprConfig",
+                    new TracingConfigurationSettings("1", true, null,
+                            new ZipkinTracingConfigurationSettings("http://zipkin:9411/api/v2/spans")), null))
             .withSubscription(new Subscription("app", "pubsub", "pubsubTopic", "/asyncpubsub/continue"))
 //  Uncomment if you want to troubleshoot Dapr related problems
 //            .withDaprLogLevel(DaprLogLevel.DEBUG)
@@ -138,7 +152,8 @@ DockerImageName myDaprImage = DockerImageName.parse("daprio/daprd:1.15.4");
             .withAppPort(8080)
             .withAppHealthCheckPath("/actuator/health")
             .withAppChannelAddress("host.testcontainers.internal")
-            .dependsOn(kafkaContainer);
+            .dependsOn(kafkaContainer)
+            .dependsOn(zipkinContainer);
   }
 
 
