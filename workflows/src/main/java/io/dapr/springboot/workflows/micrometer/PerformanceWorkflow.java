@@ -73,8 +73,7 @@ public class PerformanceWorkflow implements Workflow {
         slowActivityTimerSample.stop(registry.timer("callActivity2.workflow", "workflow", "callActivity"));
       }
       ctx.getLogger().info("Slow Activity done.");
-//            }
-
+      
       ctx.complete(paymentRequest);
       ctx.getLogger().info("Workflow Completed for Payment: {}.", paymentRequestResult);
       if (!ctx.isReplaying()) {
