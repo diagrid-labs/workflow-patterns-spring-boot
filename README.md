@@ -74,6 +74,7 @@ The `workflows` Maven project contains different workflow patterns showing also 
 - [Terminate Workflow Example](#terminate-workflow-example) (`terminate`)
 - [Raise Multiple Events that are not waited on](#raise-multiple-events-that-are-not-being-waited-on)(`raisemultievent`)
 - [Recording Operations with Micrometer](#recording-operations-with-micrometer)(`micrometer`)
+- [Multi Retries with Compensation and Timeout exceptions]()(`multiretry`)
 
 ### Simple HTTP with retry policies Example
 
@@ -851,3 +852,114 @@ You should see an output like this:
 ```
 
 Similarly, you can call the other endpoints listed above for other metrics.
+
+### Multi Retries with Compensation and Timeout exceptions
+
+This example show case the following example: 
+- Start Workflow
+- First Activity executed
+- For( from 0 to X=10)
+  - Wait for Event with 2 seconds timeout, but retry 10 times if the event never arrives
+    - Catch TaskCancelledException
+    - Execute RetryActivity (to reset state and go back to wait for Event)
+  - If the event arrives, break the for loop and move forward
+- If the event hasn't arrived after retrying 10 times: 
+  - Execute CompensationActivity
+- Else If the event arrived: 
+  - Execute NextActivity
+- Complete workflow
+
+
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/multiretry/start id="123" customer="salaboy" amount=10
+```
+
+You should see the application output: 
+```
+io.dapr.workflows.WorkflowContext        : Workflow instance 29ac53db-26f0-43cd-9cfe-b248eaa99ef5 started
+io.dapr.workflows.WorkflowContext        : Let's call the first activity for payment 123.
+i.d.s.w.multiretry.FirstActivity         : Executing First Activity.
+io.dapr.workflows.WorkflowContext        : First Activity for payment: 123 completed.
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 0.
+io.dapr.workflows.WorkflowContext        : Wait for event timed out. 
+io.dapr.workflows.WorkflowContext        : Let's execute the Retry Activity. Retry: 1
+i.d.s.w.multiretry.RetryActivity         : Executing Retry Activity.
+io.dapr.workflows.WorkflowContext        : Retry Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 1.
+io.dapr.workflows.WorkflowContext        : Wait for event timed out. 
+io.dapr.workflows.WorkflowContext        : Let's execute the Retry Activity. Retry: 2
+i.d.s.w.multiretry.RetryActivity         : Executing Retry Activity.
+io.dapr.workflows.WorkflowContext        : Retry Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 2.
+io.dapr.workflows.WorkflowContext        : Wait for event timed out. 
+io.dapr.workflows.WorkflowContext        : Let's execute the Retry Activity. Retry: 3
+i.d.s.w.multiretry.RetryActivity         : Executing Retry Activity.
+io.dapr.workflows.WorkflowContext        : Retry Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 3.
+....
+
+```
+
+This will keep retrying if an event is not sent, until the retries are exhausted and finally a CompensationActivity will be executed.
+
+If no event is sent you should see: 
+
+```
+io.dapr.workflows.WorkflowContext        : Retry Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Retries exhausted after 10 retries. 
+io.dapr.workflows.WorkflowContext        : Let's execute the Compensation Activity. 
+i.d.s.w.multiretry.CompensationActivity  : Executing Compensation Activity.
+io.dapr.workflows.WorkflowContext        : Compensation Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Workflow 123 Completed. 
+```
+
+If you start a new instance and then send an event, while it is still retrying: 
+
+```sh
+http :8080/multiretry/event content=test
+```
+
+You should see that the retry loop is stopped and the NextActivity is executed: 
+
+```
+io.dapr.workflows.WorkflowContext        : Workflow instance 0cd39871-9a4c-4b92-9541-a2638967c4cb started
+io.dapr.workflows.WorkflowContext        : Let's call the first activity for payment 123.
+i.d.s.w.multiretry.FirstActivity         : Executing First Activity.
+io.dapr.workflows.WorkflowContext        : First Activity for payment: 123 completed.
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 0.
+io.dapr.workflows.WorkflowContext        : Wait for event timed out. 
+io.dapr.workflows.WorkflowContext        : Let's execute the Retry Activity. Retry: 1
+i.d.s.w.multiretry.RetryActivity         : Executing Retry Activity.
+io.dapr.workflows.WorkflowContext        : Retry Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 1.
+io.dapr.workflows.WorkflowContext        : Wait for event timed out. 
+io.dapr.workflows.WorkflowContext        : Let's execute the Retry Activity. Retry: 2
+i.d.s.w.multiretry.RetryActivity         : Executing Retry Activity.
+io.dapr.workflows.WorkflowContext        : Retry Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 2.
+io.dapr.workflows.WorkflowContext        : Wait for event timed out. 
+io.dapr.workflows.WorkflowContext        : Let's execute the Retry Activity. Retry: 3
+i.d.s.w.multiretry.RetryActivity         : Executing Retry Activity.
+io.dapr.workflows.WorkflowContext        : Retry Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 3.
+io.dapr.workflows.WorkflowContext        : Wait for event timed out. 
+io.dapr.workflows.WorkflowContext        : Let's execute the Retry Activity. Retry: 4
+i.d.s.w.multiretry.RetryActivity         : Executing Retry Activity.
+io.dapr.workflows.WorkflowContext        : Retry Activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Wait for event, for 2 seconds, iteration: 4.
+i.d.s.w.m.MultiRetryRestController       : Event received with content {"content": "test"}.
+io.dapr.workflows.WorkflowContext        : Event arrived with content: {"content": "test"}
+io.dapr.workflows.WorkflowContext        : We got the event after 4 retries, let's execute the Next Activity. 
+i.d.s.workflows.multiretry.NextActivity  : Executing Next Activity.
+io.dapr.workflows.WorkflowContext        : Next activity executed successfully. 
+io.dapr.workflows.WorkflowContext        : Workflow 123 Completed.
+
+```
+
+As you can see, after retrying four times, the event was received and the workflow moved to the next activity, without running any compensation activity. 
+
+**Note**: Check the source code of the [workflow](), as it uses the `ctx.isReplaying()` check to increment the retry counters. This avoids counting multiple times when the workflow engine is checking which activities were completed correctly before resuming execution. 
+
