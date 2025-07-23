@@ -74,7 +74,7 @@ The `workflows` Maven project contains different workflow patterns showing also 
 - [Terminate Workflow Example](#terminate-workflow-example) (`terminate`)
 - [Raise Multiple Events that are not waited on](#raise-multiple-events-that-are-not-being-waited-on)(`raisemultievent`)
 - [Recording Operations with Micrometer](#recording-operations-with-micrometer)(`micrometer`)
-- [Multi Retries with Compensation and Timeout exceptions]()(`multiretry`)
+- [Multi Retries with Compensation and Timeout exceptions](#multi-retries-with-compensation-and-timeout-exceptions)(`multiretry`)
 
 ### Simple HTTP with retry policies Example
 
@@ -961,5 +961,5 @@ io.dapr.workflows.WorkflowContext        : Workflow 123 Completed.
 
 As you can see, after retrying four times, the event was received and the workflow moved to the next activity, without running any compensation activity. 
 
-**Note**: Check the source code of the [workflow](), as it uses the `ctx.isReplaying()` check to increment the retry counters. This avoids counting multiple times when the workflow engine is checking which activities were completed correctly before resuming execution. 
+**Note**: Check the source code of the [workflow](https://github.com/diagrid-labs/workflow-patterns-spring-boot/blob/main/workflows/src/main/java/io/dapr/springboot/workflows/multiretry/MultiRetryWorkflow.java), as it uses the `ctx.isReplaying()` check to increment the retry counters. This avoids counting multiple times when the workflow engine is checking which activities were completed correctly before resuming execution. 
 
