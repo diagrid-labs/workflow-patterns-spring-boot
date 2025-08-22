@@ -16,8 +16,6 @@ package io.dapr.springboot.workflows.multiretry;
 import io.dapr.spring.workflows.config.EnableDaprWorkflows;
 import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.springboot.workflows.service.ActivityTrackerService;
-import io.dapr.springboot.workflows.service.PaymentRequestsStore;
-import io.dapr.springboot.workflows.service.PaymentWorkflowsStore;
 import io.dapr.springboot.workflows.service.RetryLogService;
 import io.dapr.workflows.client.DaprWorkflowClient;
 import org.slf4j.Logger;
@@ -54,7 +52,7 @@ public class MultiRetryRestController {
   public PaymentRequest placePaymentRequest(@RequestBody PaymentRequest paymentRequest) {
     retryLogService.resetRetryCounter();
     activityTrackerService.clearExecutedActivities();
-    
+
     instanceId = daprWorkflowClient.scheduleNewWorkflow(MultiRetryWorkflow.class, paymentRequest);
     paymentRequest.setWorkflowInstanceId(instanceId);
     return paymentRequest;

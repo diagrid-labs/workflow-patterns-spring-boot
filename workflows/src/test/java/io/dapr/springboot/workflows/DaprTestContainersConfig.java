@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.dapr.testcontainers.DaprContainerConstants.DAPR_VERSION;
+
 @TestConfiguration()
 public class DaprTestContainersConfig {
 
@@ -133,7 +135,7 @@ public class DaprTestContainersConfig {
 //            .asCompatibleSubstituteFor("daprio/scheduler:1.15.4");
 
 
-    DockerImageName myDaprImage = DockerImageName.parse("daprio/daprd:1.15.4");
+    DockerImageName myDaprImage = DockerImageName.parse("daprio/daprd:"+DAPR_VERSION);
     return new DaprContainer(myDaprImage)
             .withAppName("workflows")
             .withNetwork(daprNetwork)

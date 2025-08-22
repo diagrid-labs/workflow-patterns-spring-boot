@@ -97,7 +97,7 @@ class MultiRetryWorkflowTests {
             .pollInterval(500, TimeUnit.MILLISECONDS)
             .until(() -> {
                     System.out.println("Retry count so far: " + retryLogService.getRetryCounter());
-                    return retryLogService.getRetryCounter() == 10;
+                    return retryLogService.getRetryCounter() == 5;
             });
 
     // Check that the workflow completed successfully
@@ -117,7 +117,7 @@ class MultiRetryWorkflowTests {
           return paymentRequestResultFromWorkflow != null;
         });
 
-    assertEquals(12, activityTrackerService.getExecutedActivities().size());
+    assertEquals(7, activityTrackerService.getExecutedActivities().size());
     assertTrue(activityTrackerService.getExecutedActivities().contains(FirstActivity.class.getCanonicalName()));
     assertTrue(activityTrackerService.getExecutedActivities().contains(RetryActivity.class.getCanonicalName()));
     assertTrue(activityTrackerService.getExecutedActivities().contains(CompensationActivity.class.getCanonicalName()));

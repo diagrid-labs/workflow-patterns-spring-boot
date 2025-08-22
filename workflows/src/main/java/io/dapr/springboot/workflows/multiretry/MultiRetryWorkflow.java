@@ -13,6 +13,7 @@ limitations under the License.
 
 package io.dapr.springboot.workflows.multiretry;
 
+import io.dapr.durabletask.Task;
 import io.dapr.durabletask.TaskCanceledException;
 import io.dapr.springboot.workflows.model.PaymentRequest;
 import io.dapr.springboot.workflows.service.RetryLogService;
@@ -28,7 +29,6 @@ public class MultiRetryWorkflow implements Workflow {
 
   @Autowired
   private RetryLogService retryLogService;
-
 
 
   @Override
@@ -47,19 +47,19 @@ public class MultiRetryWorkflow implements Workflow {
 
       String eventContent = "";
 
-      for(int i=0; i < 10; i++) {
+      for (int i = 0; i < 5; i++) {
         try {
-          ctx.getLogger().info("Wait for event, for 2 seconds, iteration: {}.", i);
+          ctx.getLogger().info("Wait for event, for 10 seconds, iteration: {}.", i);
           eventContent = ctx.waitForExternalEvent("EVENT", Duration.ofSeconds(2), String.class).await();
           ctx.getLogger().info("Event arrived with content: {}", eventContent);
           //We got the event, so we can break the for loop.
           break;
         } catch (TaskCanceledException tce) {
-          if(!ctx.isReplaying()) {
+          if (!ctx.isReplaying()) {
             retryLogService.incrementRetryCounter();
           }
           ctx.getLogger().info("Wait for event timed out. ");
-          ctx.getLogger().info("Let's execute the Retry Activity. Retry: {}" , retryLogService.getRetryCounter());
+          ctx.getLogger().info("Let's execute the Retry Activity. Retry: {}", retryLogService.getRetryCounter());
 
           paymentRequest = ctx.callActivity(RetryActivity.class.getName(), paymentRequest,
                   PaymentRequest.class).await();
@@ -67,13 +67,14 @@ public class MultiRetryWorkflow implements Workflow {
         }
       }
 
-      if(eventContent.isEmpty()){
+
+      if (eventContent.isEmpty()) {
         ctx.getLogger().info("Retries exhausted after {} retries. ", retryLogService.getRetryCounter());
         ctx.getLogger().info("Let's execute the Compensation Activity. ");
         paymentRequest = ctx.callActivity(CompensationActivity.class.getName(), paymentRequest,
                 PaymentRequest.class).await();
         ctx.getLogger().info("Compensation Activity executed successfully. ");
-      }else{
+      } else {
         ctx.getLogger().info("We got the event after {} retries, let's execute the Next Activity. ", retryLogService.getRetryCounter());
         paymentRequest = ctx.callActivity(NextActivity.class.getName(), paymentRequest,
                 PaymentRequest.class).await();
