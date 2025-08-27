@@ -17,7 +17,7 @@
 
   <properties>
 <!--     <dapr.version>0.16.0-SNAPSHOT</dapr.version>-->
-    <dapr.version>0.15.0</dapr.version>
+    <dapr.version>0.15.1</dapr.version>
   </properties>
 
   <dependencies>
