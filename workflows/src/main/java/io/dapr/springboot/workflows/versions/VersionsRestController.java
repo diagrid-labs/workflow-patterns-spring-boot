@@ -35,8 +35,6 @@ public class VersionsRestController {
   @Autowired
   private DaprWorkflowClient daprWorkflowClient;
 
-
-
   @Autowired
   private ActivityTrackerService activityTrackerService;
 
@@ -56,19 +54,19 @@ public class VersionsRestController {
     return paymentRequest;
   }
 
-  /**
-   * Versions workflow
-   *
-   * @param paymentRequest to be sent to a remote http service
-   * @return workflow instance id created for the payment
-   */
-  @PostMapping("/versions/v2/start")
-  public PaymentRequest placePaymentRequestV2(@RequestBody PaymentRequest paymentRequest) {
-    activityTrackerService.clearExecutedActivities();
-    instanceId = daprWorkflowClient.scheduleNewWorkflow(VersionsWorkflowV2.class, paymentRequest);
-    paymentRequest.setWorkflowInstanceId(instanceId);
-    return paymentRequest;
-  }
+//  /**
+//   * Versions workflow
+//   *
+//   * @param paymentRequest to be sent to a remote http service
+//   * @return workflow instance id created for the payment
+//   */
+//  @PostMapping("/versions/v2/start")
+//  public PaymentRequest placePaymentRequestV2(@RequestBody PaymentRequest paymentRequest) {
+//    activityTrackerService.clearExecutedActivities();
+//    instanceId = daprWorkflowClient.scheduleNewWorkflow(VersionsWorkflowV2.class, paymentRequest);
+//    paymentRequest.setWorkflowInstanceId(instanceId);
+//    return paymentRequest;
+//  }
 
   @PostMapping("/versions/event")
   public String event(@RequestBody String content) {

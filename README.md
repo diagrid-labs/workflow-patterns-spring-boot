@@ -75,6 +75,7 @@ The `workflows` Maven project contains different workflow patterns showing also 
 - [Raise Multiple Events that are not waited on](#raise-multiple-events-that-are-not-being-waited-on)(`raisemultievent`)
 - [Recording Operations with Micrometer](#recording-operations-with-micrometer)(`micrometer`)
 - [Multi Retries with Compensation and Timeout exceptions](#multi-retries-with-compensation-and-timeout-exceptions)(`multiretry`)
+- [Versioning Workflows](#versioning-workflows)(`versions`)
 
 ### Simple HTTP with retry policies Example
 
@@ -963,3 +964,59 @@ As you can see, after retrying four times, the event was received and the workfl
 
 **Note**: Check the source code of the [workflow](https://github.com/diagrid-labs/workflow-patterns-spring-boot/blob/main/workflows/src/main/java/io/dapr/springboot/workflows/multiretry/MultiRetryWorkflow.java), as it uses the `ctx.isReplaying()` check to increment the retry counters. This avoids counting multiple times when the workflow engine is checking which activities were completed correctly before resuming execution. 
 
+### Versioning Workflows
+
+**Note**: this example only work with Catalyst or with Dapr installed on a cluster that maintains state. This will not work with Testcontainers locally, as the state is wiped out every time you stop the application.
+
+On this example we simulate updating a workflow definition to its version 2 (V2) while we have in flight workflow instances of the initial version. To simulate this, we will start 10 workflow instances with version 1. Currently version 2 (V2) is commented out and not available. Right after starting 10 instances of version 1, we will shutdown the application, uncomment version 2 and the endpoint that allows us to start new instances for V2. Then we will restart the application, Dapr Workflows will start completing the inflight v1 instances using the old definition, while we can start new instances by calling the new `v2` endpoint. 
+
+
+Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
+
+```sh
+http :8080/versions/start id="123" customer="salaboy" amount=10
+```
+
+Call this endpoint multiple times to generate multiple instances running with the first version of the workflow. Once you have several inflight instances, use Ctrl+C to shutdown the application. This will cause the workflow instances to stop being processed.
+
+
+With the application stopped, uncomment the contents of the `VersionsWorkflowV2.java` file. 
+
+Also, uncomment the following section of the `VersionsRestController.java` class, so you can start new workflow instances with V2:
+
+```
+//@PostMapping("/versions/v2/start")
+//  public PaymentRequest placePaymentRequestV2(@RequestBody PaymentRequest paymentRequest) {
+//    activityTrackerService.clearExecutedActivities();
+//    instanceId = daprWorkflowClient.scheduleNewWorkflow(VersionsWorkflowV2.class, paymentRequest);
+//    paymentRequest.setWorkflowInstanceId(instanceId);
+//    return paymentRequest;
+//  }
+```
+
+It should look like this: 
+```
+@PostMapping("/versions/v2/start")
+  public PaymentRequest placePaymentRequestV2(@RequestBody PaymentRequest paymentRequest) {
+    activityTrackerService.clearExecutedActivities();
+    instanceId = daprWorkflowClient.scheduleNewWorkflow(VersionsWorkflowV2.class, paymentRequest);
+    paymentRequest.setWorkflowInstanceId(instanceId);
+    return paymentRequest;
+}
+```
+
+Now, start the application again by running: 
+
+```
+mvn spring-boot:test-run
+```
+
+In the application output you should see that the instance of version 1 are being processed. You can now start new instances with V2 by calling the following endpoint. 
+
+```sh
+http :8080/versions/v2/start id="123" customer="salaboy" amount=10
+```
+
+By following this approach, when changing workflows, you can ensure that inflight workflows using an old workflow definition version can be processed until completion even if new versions are available. 
+
+By the end of the execution, all V1 and V2 workflow instances should be completed correctly, even if the application was stopped and modified by adding V2.

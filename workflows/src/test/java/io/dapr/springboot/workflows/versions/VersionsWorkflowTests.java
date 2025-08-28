@@ -117,56 +117,54 @@ class VersionsWorkflowTests {
 
   }
 
-  @Test
-  void testVersionsV2Workflows() throws InterruptedException, IOException {
-
-    activityTrackerService.clearExecutedActivities();
-
-    PaymentRequest paymentRequest = new PaymentRequest("123", "salaboy", 1);
-
-    PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)
-            .body(paymentRequest)
-            .when()
-            .post("/versions/v2/start")
-            .then()
-            .statusCode(200).extract().as(PaymentRequest.class);
-
-    // Check that I have an instance id
-    assertFalse(paymentRequestResult.getWorkflowInstanceId().isEmpty());
-
-    System.out.println(">>> Let's send an event");
-    given().contentType(ContentType.JSON)
-            .body("test content")
-            .when()
-            .post("/versions/event")
-            .then()
-            .statusCode(200);
-
-    // Check that the workflow completed successfully
-    await().atMost(Duration.ofSeconds(20))
-            .pollDelay(500, TimeUnit.MILLISECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .until(() -> {
-              WorkflowInstanceStatus instanceState = daprWorkflowClient
-                      .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
-              if (instanceState == null) {
-                return false;
-              }
-              if (!instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED)) {
-                return false;
-              }
-              PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
-              return paymentRequestResultFromWorkflow != null;
-            });
-
-    assertEquals(3, activityTrackerService.getExecutedActivities().size());
-    assertTrue(activityTrackerService.getExecutedActivities().contains(FirstActivity.class.getCanonicalName()));
-    assertTrue(activityTrackerService.getExecutedActivities().contains(NextActivity.class.getCanonicalName()));
-    assertTrue(activityTrackerService.getExecutedActivities().contains(ThirdActivity.class.getCanonicalName()));
-
-
-
-  }
+//  @Test
+//  void testVersionsV2Workflows() throws InterruptedException, IOException {
+//
+//    activityTrackerService.clearExecutedActivities();
+//
+//    PaymentRequest paymentRequest = new PaymentRequest("123", "salaboy", 1);
+//
+//    PaymentRequest paymentRequestResult = given().contentType(ContentType.JSON)
+//            .body(paymentRequest)
+//            .when()
+//            .post("/versions/v2/start")
+//            .then()
+//            .statusCode(200).extract().as(PaymentRequest.class);
+//
+//    // Check that I have an instance id
+//    assertFalse(paymentRequestResult.getWorkflowInstanceId().isEmpty());
+//
+//    System.out.println(">>> Let's send an event");
+//    given().contentType(ContentType.JSON)
+//            .body("test content")
+//            .when()
+//            .post("/versions/event")
+//            .then()
+//            .statusCode(200);
+//
+//    // Check that the workflow completed successfully
+//    await().atMost(Duration.ofSeconds(20))
+//            .pollDelay(500, TimeUnit.MILLISECONDS)
+//            .pollInterval(500, TimeUnit.MILLISECONDS)
+//            .until(() -> {
+//              WorkflowInstanceStatus instanceState = daprWorkflowClient
+//                      .getInstanceState(paymentRequestResult.getWorkflowInstanceId(), true);
+//              if (instanceState == null) {
+//                return false;
+//              }
+//              if (!instanceState.getRuntimeStatus().equals(WorkflowRuntimeStatus.COMPLETED)) {
+//                return false;
+//              }
+//              PaymentRequest paymentRequestResultFromWorkflow = instanceState.readOutputAs(PaymentRequest.class);
+//              return paymentRequestResultFromWorkflow != null;
+//            });
+//
+//    assertEquals(3, activityTrackerService.getExecutedActivities().size());
+//    assertTrue(activityTrackerService.getExecutedActivities().contains(FirstActivity.class.getCanonicalName()));
+//    assertTrue(activityTrackerService.getExecutedActivities().contains(NextActivity.class.getCanonicalName()));
+//    assertTrue(activityTrackerService.getExecutedActivities().contains(ThirdActivity.class.getCanonicalName()));
+//
+//  }
 
 
 }
