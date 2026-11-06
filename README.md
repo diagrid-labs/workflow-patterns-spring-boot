@@ -9,14 +9,14 @@ cd workflows/
 mvn spring-boot:test-run
 ```
 
-**Note:** If you want to run this examples against Diagrid's Catalyst, you need to comment out the following line in the `application.properties` file located in `src/test/resources/`:
+**Note:** If you want to run this examples against Diagrid, you need to comment out the following line in the `application.properties` file located in `src/test/resources/`:
 
 ```
 #comment out to run tests against Catalyst
 tests.dapr.local=true
 ```
 
-You can set your Catalyst ENV Variables or set the following Spring Boot Application properties: 
+You can set your Diagrid ENV Variables or set the following Spring Boot Application properties: 
 
 In your `application.properties` file: 
 ```
@@ -147,9 +147,9 @@ The workflow is complemented by a RestEndpoint that  is subscribed (with a Dapr 
 
 Once the application is running, you can invoke the endpoint using `cURL` or [`HTTPie`](https://httpie.io/).
 
-**Note**: to run this with Catalyst you need to:
+**Note**: to run this with Diagrid you need to:
 - Start the application with a dev tunnel `diagrid dev run --project <PROJECT_ID> --app-id <APP_ID> --app-port 8080 mvn spring-boot:test-run`
-- Create a Catalyst Subscription with the following details: 
+- Create a Diagrid Subscription with the following details: 
   - Subscription Name: `pubsub-subscription`
   - PubSub Component: `pubsub`
   - Scopes: select <APP_ID>
@@ -966,7 +966,7 @@ As you can see, after retrying four times, the event was received and the workfl
 
 ### Versioning Workflows
 
-**Note**: this example only work with Catalyst or with Dapr installed on a cluster that maintains state. This will not work with Testcontainers locally, as the state is wiped out every time you stop the application.
+**Note**: this example only work with Diagrid or with Dapr installed on a cluster that maintains state. This will not work with Testcontainers locally, as the state is wiped out every time you stop the application.
 
 On this example we simulate updating a workflow definition to its version 2 (V2) while we have in flight workflow instances of the initial version. To simulate this, we will start 10 workflow instances with version 1. Currently version 2 (V2) is commented out and not available. Right after starting 10 instances of version 1, we will shutdown the application, uncomment version 2 and the endpoint that allows us to start new instances for V2. Then we will restart the application, Dapr Workflows will start completing the inflight v1 instances using the old definition, while we can start new instances by calling the new `v2` endpoint. 
 
