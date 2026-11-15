@@ -9,10 +9,10 @@ cd workflows/
 mvn spring-boot:test-run
 ```
 
-**Note:** If you want to run this examples against Diagrid, you need to comment out the following line in the `application.properties` file located in `src/test/resources/`:
+**Note:** If you want to run these examples against Diagrid, you need to comment out the following line in the `application.properties` file located in `src/test/resources/`:
 
 ```
-#comment out to run tests against Catalyst
+#comment out to run tests against Diagrid
 tests.dapr.local=true
 ```
 
@@ -20,9 +20,9 @@ You can set your Diagrid ENV Variables or set the following Spring Boot Applicat
 
 In your `application.properties` file: 
 ```
-dapr.client.httpEndpoint=<Your Catalyst Project HTTP Endpoint>
-dapr.client.grpcEndpoint=<Your Catalyst Project GRPC Endpoint>
-dapr.client.apiToken=<Your Catalyst APP ID API Token>
+dapr.client.httpEndpoint=<Your Diagrid Project HTTP Endpoint>
+dapr.client.grpcEndpoint=<Your Diagrid Project GRPC Endpoint>
+dapr.client.apiToken=<Your Diagrid App ID API Token>
 ```
 
 ## Observability
